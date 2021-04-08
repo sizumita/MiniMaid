@@ -1,1 +1,2 @@
 discord.py[voice]==1.7.1
+sqlalchemy==1.4.6
