@@ -14,12 +14,12 @@ class Database:
             environ["DATABASE_URL"],
             echo=True,
         )
-        self.session = None
+        self.Session = None
 
     async def start(self):
         async with self.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
 
-        self.session = sessionmaker(
+        self.Session = sessionmaker(
             self.engine, expire_on_commit=False, class_=AsyncSession
         )
