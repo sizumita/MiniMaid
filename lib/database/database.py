@@ -9,7 +9,7 @@ from lib.database.base import Base
 
 
 class Database:
-    def __init__(self, loop: asyncio.BaseEventLoop = asyncio.get_event_loop()) -> None:
+    def __init__(self, loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()) -> None:
         self.loop = loop
         self.engine = create_async_engine(
             environ["DATABASE_URL"],
