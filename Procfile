@@ -1,1 +1,1 @@
-bot: ./heroku_entrypoint.sh
+bot: bash heroku_entrypoint.sh
