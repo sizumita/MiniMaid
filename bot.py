@@ -26,7 +26,7 @@ class MiniMaid(commands.Bot):
         async with self.db.Session() as session:
             sql = select(Preference).where(Preference.guild_id == message.guild.id)
             result = await session.execute(sql)
-            data: Preference = result.scalars().first()
+            data = result.scalars().first()
             if data is None:
                 return
 
