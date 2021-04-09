@@ -42,3 +42,10 @@ This bot is Japanese Bot.
 - run `pip install -r requirements.txt`
 - run `source .env && python main.py`
 
+# Heroku support
+
+Click the button below to deploy to Heroku.
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
+
+For more information about pricing, please refer to [here](https://www.heroku.com/pricing).
