@@ -12,7 +12,7 @@ SUGGEST_ADMINISTRATOR = "自動で退出します。再度権限を確認して�
 
 CANNOT_CREATE_CHANNEL = "チャンネル作成権限が存在しないため、専用チャンネルを作成できませんでした。\n" + SUGGEST_ADMINISTRATOR
 
-CANNOT_SEND_MESSAGE = "メッセージを送信する権限が存在しませんでした。\n" +  SUGGEST_ADMINISTRATOR
+CANNOT_SEND_MESSAGE = "メッセージを送信する権限が存在しませんでした。\n" + SUGGEST_ADMINISTRATOR
 
 
 class PreferenceCog(commands.Cog):
