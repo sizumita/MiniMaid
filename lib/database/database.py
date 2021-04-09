@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from os import environ
+from typing import Optional
 
 from lib.database.base import Base
 
@@ -14,7 +15,7 @@ class Database:
             environ["DATABASE_URL"],
             echo=True,
         )
-        self.Session = None
+        self.Session: Optional[sessionmaker] = None
 
     async def start(self):
         async with self.engine.begin() as conn:
