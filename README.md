@@ -4,8 +4,14 @@ This bot is Japanese Bot.
 
 # Features
 
-- [ ] command channel (We can use commands only this channel)
+- [x] command channel (We can use commands only this channel)
 - [ ] youtube music player
+    - [ ] queue
+    - [ ] skip
+    - [ ] jump any place (e.g. 23sec)
+    - [ ] delete queue
+    - [ ] shuffle queue
+    - [ ] clear queue
 - [ ] music playlist
     - [ ] create playlist
     - [ ] modify playlist
