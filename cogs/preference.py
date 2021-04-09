@@ -19,7 +19,12 @@ class PreferenceCog(commands.Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
 
-    async def greeting(self, channel) -> None:
+    async def greeting(self, channel: discord.TextChannel) -> None:
+        """
+        最初の表示用のembedを送信します。
+        :param channel: 送信先のチャンネルです。
+        :return: None
+        """
         embed = discord.Embed(
             title="MiniMaidへようこそ",
             description="MiniMaidは、小規模サーバーに適した便利Botです。音楽の再生やダイス、チーム分けなどの機能があります。",
@@ -43,6 +48,7 @@ class PreferenceCog(commands.Cog):
 
     @commands.Cog.listener(name="on_guild_join")
     async def create_preference(self, guild: discord.Guild) -> None:
+        """設定を作成します。"""
         async with self.bot.db.Session() as session:
             sql = select(Preference).where(Preference.guild_id == guild.id)
             result = await session.execute(sql)
@@ -68,6 +74,23 @@ class PreferenceCog(commands.Cog):
                 session.add(pref)
 
         await self.greeting(new_channel)
+
+    @commands.command(name="regenerate")
+    async def regenerate_command_channel(self, ctx: commands.Context) -> None:
+        """MiniMaid操作用のチャンネルを再度生成します。"""
+        new_channel = await ctx.guild.create_text_channel(
+            name="minimaid-control",
+            topic="MiniMaid操作用のチャンネルです。このチャンネルは自動生成されました。"
+        )
+        async with self.bot.db.Session() as session:
+            sql = select(Preference).where(Preference.guild_id == ctx.guild.id)
+            result = await session.execute(sql)
+            data = result.scalars().first()
+            data.command_channel_id = new_channel.id
+            await session.commit()
+        await self.greeting(new_channel)
+
+        await ctx.send(f"操作用チャンネルは<#{new_channel.id}>に変更されました。\nこのチャンネルは消去可能です。")
 
 
 def setup(bot):
