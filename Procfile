@@ -1,1 +1,1 @@
-bot: python main.py
+bot: ./heroku_entrypoint.sh
