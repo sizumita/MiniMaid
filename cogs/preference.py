@@ -93,5 +93,5 @@ class PreferenceCog(commands.Cog):
         await ctx.send(f"操作用チャンネルは<#{new_channel.id}>に変更されました。\nこのチャンネルは消去可能です。")
 
 
-def setup(bot):
+def setup(bot: 'MiniMaid') -> None:
     return bot.add_cog(PreferenceCog(bot))

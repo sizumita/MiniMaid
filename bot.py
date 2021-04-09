@@ -15,7 +15,7 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
-    async def start(self, *args, **kwargs) -> None:
+    async def start(self, *args: list, **kwargs: dict) -> None:
         await self.db.start()
         await super(MiniMaid, self).start(*args, **kwargs)
 

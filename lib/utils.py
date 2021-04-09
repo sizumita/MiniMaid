@@ -1,7 +1,7 @@
 import discord
 
 
-async def try_send_error_message(guild: discord.Guild, error) -> bool:
+async def try_send_error_message(guild: discord.Guild, error: str) -> bool:
     for channel in guild.text_channels:
         if not channel.permissions_for(guild.me).send_messages:
             continue
