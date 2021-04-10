@@ -4,7 +4,20 @@ This bot is Japanese Bot.
 
 # Features
 
-- [x] command channel (We can use commands only this channel)
+- [ ] create team
+- [ ] dice
+    - [ ] nCr
+- [ ] text to speech
+    - [ ] OpenJTalk speech
+- [ ] poll system
+- [ ] party system
+    - [ ] create party
+    - [ ] add member to party
+    - [ ] remove member from party
+    - [ ] call party member with message (mention all party members)
+- [ ] timer
+    - [ ] set timer
+    - [ ] set timer text
 - [ ] youtube music player
     - [ ] queue
     - [ ] skip
@@ -18,11 +31,7 @@ This bot is Japanese Bot.
     - [ ] play playlist
     - [ ] delete playlist
     - [ ] shuffle playlist
-- [ ] create team
-- [ ] dice
-    - [ ] nCr
-- [ ] text to speech
-    - [ ] OpenJTalk speech
+- [ ] 日程調整機能
 
 
 # Installation
