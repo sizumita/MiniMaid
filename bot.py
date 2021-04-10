@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+from os import environ
 
 from lib.database.database import Database
 
@@ -7,7 +8,7 @@ from lib.database.database import Database
 class MiniMaid(commands.Bot):
     def __init__(self) -> None:
         super(MiniMaid, self).__init__(
-            command_prefix="",
+            command_prefix=commands.when_mentioned_or(environ["PREFIX"]),
             intents=discord.Intents.all(),
             help_command=None
         )
