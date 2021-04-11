@@ -53,7 +53,7 @@ class PartyCog(Cog):
                 session.add(party)
         await ctx.send(f"パーティ: `{name}`を作成しました。", reference=ctx.message)
 
-    @party.command(name="join")
+    @party.command(name="join", aliases=["j"])
     async def join_party(self, ctx: Context, name: str):
         """パーティに参加します。"""
         async with self.bot.db.Session() as session:
@@ -72,7 +72,7 @@ class PartyCog(Cog):
             await session.commit()
         await ctx.send(f"パーティ: `{name}`に参加しました。", reference=ctx.message)
 
-    @party.command(name="leave")
+    @party.command(name="leave", aliases=["l", "left"])
     async def leave_party(self, ctx: Context, name: str):
         """パーティから離脱します。"""
         async with self.bot.db.Session() as session:
@@ -96,7 +96,7 @@ class PartyCog(Cog):
 
         await ctx.send(f"パーティ: `{name}`から離脱しました。", reference=ctx.message)
 
-    @party.command(name="remove")
+    @party.command(name="remove", aliases=["r", "delete"])
     async def remove_party(self, ctx: Context, name: str):
         """パーティを削除します。作成者もしくはサーバーの管理権限を持っているユーザーが可能です。"""
         async with self.bot.db.Session() as session:
