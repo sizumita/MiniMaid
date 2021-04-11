@@ -24,7 +24,7 @@ class PartyCog(Cog):
         await ctx.send(PARTY_HELP.format(ctx))
 
     @party.command(name="list")
-    async def party_list(self, ctx: Context):
+    async def party_list(self, ctx: Context) -> None:
         """全てのパーティを表示します。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_parties(ctx.guild.id))
@@ -34,11 +34,12 @@ class PartyCog(Cog):
             return
 
         text = "```\nパーティー名 : 人数\n{}\n```".format(
-            "\n".join(f"{party.name} : {len(party.members)}人" for party in parties))
+            "\n".join(f"{party.name} : {len(party.members)}人"
+                      for party in parties))
         await ctx.send(text, reference=ctx.message)
 
     @party.command(name="create")
-    async def create_party(self, ctx: Context, name: str):
+    async def create_party(self, ctx: Context, name: str) -> None:
         """パーティを作成します。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_party(ctx.guild.id, name))
@@ -54,7 +55,7 @@ class PartyCog(Cog):
         await ctx.send(f"パーティ: `{name}`を作成しました。", reference=ctx.message)
 
     @party.command(name="join", aliases=["j"])
-    async def join_party(self, ctx: Context, name: str):
+    async def join_party(self, ctx: Context, name: str) -> None:
         """パーティに参加します。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_party(ctx.guild.id, name))
@@ -73,7 +74,7 @@ class PartyCog(Cog):
         await ctx.send(f"パーティ: `{name}`に参加しました。", reference=ctx.message)
 
     @party.command(name="leave", aliases=["l", "left"])
-    async def leave_party(self, ctx: Context, name: str):
+    async def leave_party(self, ctx: Context, name: str) -> None:
         """パーティから離脱します。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_party(ctx.guild.id, name))
@@ -97,7 +98,7 @@ class PartyCog(Cog):
         await ctx.send(f"パーティ: `{name}`から離脱しました。", reference=ctx.message)
 
     @party.command(name="remove", aliases=["r", "delete"])
-    async def remove_party(self, ctx: Context, name: str):
+    async def remove_party(self, ctx: Context, name: str) -> None:
         """パーティを削除します。作成者もしくはサーバーの管理権限を持っているユーザーが可能です。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_party(ctx.guild.id, name))
@@ -118,7 +119,7 @@ class PartyCog(Cog):
             await ctx.send(f"パーティ: `{name}`を削除しました。", reference=ctx.message)
 
     @party.command(name="call")
-    async def call_party_members(self, ctx: Context, name: str, *, text: str):
+    async def call_party_members(self, ctx: Context, name: str, *, text: str) -> None:
         """パーティメンバー全員にメンション付きメッセージを送信します。"""
         async with self.bot.db.Session() as session:
             result = await session.execute(select_party(ctx.guild.id, name))
@@ -136,7 +137,7 @@ class PartyCog(Cog):
             " ".join(
                 ctx.guild.get_member(member).mention
                 for member in party.members if ctx.guild.get_member(member) is not None
-            )[:2000-len(text)]
+            )[:2000 - len(text)]
         )
         await ctx.send(content, allowed_mentions=discord.AllowedMentions(everyone=False, users=True))
 
