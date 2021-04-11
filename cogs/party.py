@@ -3,6 +3,7 @@ from lib.database.models import Party
 from lib.database.query import select_party, select_parties
 from sqlalchemy import update
 from typing import TYPE_CHECKING
+import discord
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -32,7 +33,8 @@ class PartyCog(Cog):
             await ctx.send("パーティはありません。", reference=ctx.message)
             return
 
-        text = "```\nパーティー名 : 人数\n{}\n```".format("\n".join(f"{party.name} : {len(party.members)}人" for party in parties))
+        text = "```\nパーティー名 : 人数\n{}\n```".format(
+            "\n".join(f"{party.name} : {len(party.members)}人" for party in parties))
         await ctx.send(text, reference=ctx.message)
 
     @party.command(name="create")
@@ -114,6 +116,29 @@ class PartyCog(Cog):
                 return
             await session.commit()
             await ctx.send(f"パーティ: `{name}`を削除しました。", reference=ctx.message)
+
+    @party.command(name="call")
+    async def call_party_members(self, ctx: Context, name: str, *, text: str):
+        """パーティメンバー全員にメンション付きメッセージを送信します。"""
+        async with self.bot.db.Session() as session:
+            result = await session.execute(select_party(ctx.guild.id, name))
+            party = result.scalars().first()
+            if party is None:
+                await ctx.send("その名前のパーティは存在しません。", reference=ctx.message)
+                await session.rollback()
+                return
+            elif ctx.author.id not in party.members:
+                await ctx.send("そのパーティに参加していません。", reference=ctx.message)
+                await session.rollback()
+                return
+            await session.commit()
+        content = text + " {}".format(
+            " ".join(
+                ctx.guild.get_member(member).mention
+                for member in party.members if ctx.guild.get_member(member) is not None
+            )[:2000-len(text)]
+        )
+        await ctx.send(content, allowed_mentions=discord.AllowedMentions(everyone=False, users=True))
 
 
 def setup(bot: 'MiniMaid') -> None:
