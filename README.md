@@ -10,11 +10,11 @@ This bot is Japanese Bot.
 - [ ] text to speech
     - [ ] OpenJTalk speech
 - [ ] poll system
-- [ ] party system
-    - [ ] create party
-    - [ ] add member to party
-    - [ ] remove member from party
-    - [ ] call party member with message (mention all party members)
+- [x] party system
+    - [x] create party
+    - [x] add member to party
+    - [x] remove member from party
+    - [x] call party member with message (mention all party members)
 - [ ] timer
     - [ ] set timer
     - [ ] set timer text
