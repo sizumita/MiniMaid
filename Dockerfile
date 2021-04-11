@@ -17,5 +17,6 @@ RUN pip install -r requirements.txt
 COPY bot.py /bot
 COPY main.py /bot
 COPY cogs /bot/cogs
+COPY lib /bot/lib
 
 CMD ["python", "main.py"]

@@ -5,6 +5,7 @@ from os import environ
 bot = MiniMaid()
 
 extensions = [
+    "cogs.party"
 ]
 
 for extension in extensions:
