@@ -15,7 +15,9 @@ class Database:
             environ["DATABASE_URL"],
             echo=True,
         )
+        self.serialized_engine = self.engine.execution_options(isolation_level="SERIALIZABLE")
         self.Session: Optional[sessionmaker] = None
+        self.SerializedSession: Optional[sessionmaker] = None
 
     async def start(self) -> None:
         async with self.engine.begin() as conn:
@@ -24,4 +26,7 @@ class Database:
 
         self.Session = sessionmaker(
             self.engine, expire_on_commit=False, class_=AsyncSession
+        )
+        self.SerializedSession = sessionmaker(
+            self.serialized_engine, expire_on_commit=False, class_=AsyncSession
         )

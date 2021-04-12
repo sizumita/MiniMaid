@@ -44,11 +44,10 @@ class PollManagerCog(Cog):
         if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
             return
 
-        async with self.bot.db.Session() as session:
-            async with session.begin(subtransactions=True):
+        async with self.bot.db.SerializedSession() as session:
+            async with session.begin():
                 query = select(Poll)\
                     .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
-                    .with_for_update()\
                     .options(selectinload(Poll.choices).selectinload(Choice.votes))
                 result = await session.execute(query)
                 poll = result.scalars().first()
@@ -79,11 +78,11 @@ class PollManagerCog(Cog):
         if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
             return
 
-        async with self.bot.db.Session() as session:
-            async with session.begin(subtransactions=True):
+        async with self.bot.db.SerializedSession() as session:
+            async with session.begin():
+
                 query = select(Poll)\
                     .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
-                    .with_for_update()\
                     .options(selectinload(Poll.choices).selectinload(Choice.votes))
                 result = await session.execute(query)
                 poll = result.scalars().first()
