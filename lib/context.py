@@ -13,3 +13,6 @@ class Context(commands.Context):
             embed.description = description
 
         return await self.send(embed=embed)
+
+    async def embed(self, embed: discord.Embed) -> discord.Message:
+        return await self.send(embed=embed)

@@ -2,6 +2,8 @@ from discord.ext.commands import (
     Cog,
     group
 )
+from lib.database.query import create_poll
+from lib.embed import make_poll_embed, make_poll_reserve_embed
 import discord
 from lib.context import Context
 import re
@@ -45,15 +47,18 @@ class PollCog(Cog):
         return text in UNICODE_EMOJI["en"].keys()  # type: ignore
 
     def is_discord_emoji(self, text: str) -> bool:
-        if match := emoji_compiled.match(text):
+        match = emoji_compiled.match(text)
+        if match is not None:
             emoji_id = match.group(1)
             emoji = self.bot.get_emoji(int(emoji_id))
             return emoji is not None
         return False
 
     def get_discord_emoji(self, text: str) -> discord.Emoji:
-        emoji_id = emoji_compiled.match(text).group(1)
-        return self.bot.get_emoji(int(emoji_id))
+        if match := emoji_compiled.match(text):
+            emoji_id = match.group(1)
+            return self.bot.get_emoji(int(emoji_id))
+        raise ValueError("Unknown Emoji")
 
     def parse_choices(self, choices: List[str]) -> List[Tuple[str, str]]:
         results = []
@@ -83,7 +88,7 @@ class PollCog(Cog):
 
         return results
 
-    def parse_args(self, *args: str) -> Tuple[bool, str, List[Tuple[str, str]]]:
+    def parse_args(self, *args: str) -> Tuple[bool, str, List[Tuple[Any, Any]]]:
         params = list(args)
         hidden = False
         first = params.pop(0)
@@ -97,8 +102,16 @@ class PollCog(Cog):
             return hidden, title, [("\U00002b55", "\U00002b55"), ("\U0000274c", "\U0000274c")]
 
         # parse choices
-        if all(map(self.is_emoji, params)):
-            return hidden, title, [(i, i) for i in params]
+        if all(map(lambda x: self.is_emoji(x) or self.is_discord_emoji(x), params)):
+            choices = []
+            for emoji in params:
+                if self.is_emoji(emoji):
+                    choices.append((emoji, emoji))
+                else:
+                    emoji = self.get_discord_emoji(emoji)
+                    choices.append((emoji, emoji))
+
+            return hidden, title, choices
 
         if self.is_emoji(params[0]) or self.is_discord_emoji(params[0]):
             return hidden, title, self.parse_choices_with_emoji(params)
@@ -107,11 +120,19 @@ class PollCog(Cog):
     async def create_poll(self,
                           ctx: Context,
                           title: str,
-                          choices: List[Tuple[str, str]],
+                          choices: List[Tuple[Any, Any]],
                           limit: Optional[int] = None,
                           hidden: bool = False) -> None:
-        # TODO 書く
-        print(choices)
+        """create poll"""
+
+        poll_message = await ctx.embed(make_poll_reserve_embed(ctx))
+        poll = create_poll(title, choices, limit, hidden, ctx.guild.id, ctx.channel.id, poll_message.id, ctx.author.id)
+        async with self.bot.db.Session() as session:
+            async with session.begin():
+                session.add(poll)
+        await poll_message.edit(embed=make_poll_embed(ctx, poll))
+        for emoji, _ in choices:
+            await poll_message.add_reaction(emoji)
 
     @group()
     async def poll(self, ctx: Context, *args: str) -> None:
@@ -134,13 +155,22 @@ class PollCog(Cog):
 
             `poll ねこ 😸 😻 😹`
         """
-        is_hidden, title, choices = self.parse_args(*args)
+        params = []
+        for arg in args:
+            if len(arg) == 2:
+                if self.is_emoji(arg[0]) and arg[1].encode() == b"\xef\xb8\x8f":
+                    params.append(arg[0])
+                    continue
+            params.append(arg)
+
+        is_hidden, title, choices = self.parse_args(*params)
         await self.create_poll(ctx, title, choices, None, is_hidden)
 
     @poll.error
     async def poll_error(self, ctx: Context, exception: Exception) -> None:
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
+        raise exception
 
     @poll.command(name="limited", aliases=["lim", "l"])
     async def limited_poll(self, ctx: Context, num: int, *args: str) -> None:
@@ -167,6 +197,7 @@ class PollCog(Cog):
     async def limited_poll_error(self, ctx: Context, exception: Exception) -> None:
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
+        raise exception
 
 
 def setup(bot: 'MiniMaid') -> None:
