@@ -2,13 +2,15 @@ from discord.ext.commands import (
     Cog,
     group
 )
+import discord
 from lib.context import Context
-
+import re
 from emoji import UNICODE_EMOJI
-from typing import TYPE_CHECKING, Optional, List, Tuple
+from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+
 if TYPE_CHECKING:
     from bot import MiniMaid
-
+emoji_compiled = re.compile(r"^<a?:[a-zA-Z0-9\_]+:([0-9]+)>$")
 
 default_emojis = [
     "\N{REGIONAL INDICATOR SYMBOL LETTER A}",
@@ -31,7 +33,6 @@ default_emojis = [
     "\N{REGIONAL INDICATOR SYMBOL LETTER R}",
     "\N{REGIONAL INDICATOR SYMBOL LETTER S}",
     "\N{REGIONAL INDICATOR SYMBOL LETTER T}",
-
 ]
 
 
@@ -39,9 +40,20 @@ class PollCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
 
-    def is_emoji(self, text: str) -> bool:
-        # TODO: discordで追加された絵文字かどうかの判定
+    @staticmethod
+    def is_emoji(text: str) -> bool:
         return text in UNICODE_EMOJI["en"].keys()  # type: ignore
+
+    def is_discord_emoji(self, text: str) -> bool:
+        if match := emoji_compiled.match(text):
+            emoji_id = match.group(1)
+            emoji = self.bot.get_emoji(int(emoji_id))
+            return emoji is not None
+        return False
+
+    def get_discord_emoji(self, text: str) -> discord.Emoji:
+        emoji_id = emoji_compiled.match(text).group(1)
+        return self.bot.get_emoji(int(emoji_id))
 
     def parse_choices(self, choices: List[str]) -> List[Tuple[str, str]]:
         results = []
@@ -56,10 +68,18 @@ class PollCog(Cog):
         results = []
         while choices:
             emoji = choices.pop(0)
-            if not self.is_emoji(emoji):
-                raise ValueError(f"絵文字がくるべきでしたが、絵文字ではありませんでした: {emoji}")
-            text = choices.pop(0)
-            results.append((emoji, text))
+            if self.is_emoji(emoji):
+                text = choices.pop(0)
+                results.append((emoji, text))
+                continue
+
+            elif self.is_discord_emoji(emoji):
+                emoji_o = self.get_discord_emoji(emoji)
+                text = choices.pop(0)
+                results.append((emoji_o, text))
+                continue
+
+            raise ValueError(f"絵文字がくるべきでしたが、絵文字ではありませんでした: {emoji}")
 
         return results
 
@@ -80,7 +100,7 @@ class PollCog(Cog):
         if all(map(self.is_emoji, params)):
             return hidden, title, [(i, i) for i in params]
 
-        if self.is_emoji(params[0]):
+        if self.is_emoji(params[0]) or self.is_discord_emoji(params[0]):
             return hidden, title, self.parse_choices_with_emoji(params)
         return hidden, title, self.parse_choices(params)
 
