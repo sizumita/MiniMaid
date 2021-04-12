@@ -3,6 +3,7 @@ import discord
 from os import environ
 
 from lib.database.database import Database
+from lib.context import Context
 
 
 class MiniMaid(commands.Bot):
@@ -17,3 +18,10 @@ class MiniMaid(commands.Bot):
     async def start(self, *args: list, **kwargs: dict) -> None:
         await self.db.start()
         await super(MiniMaid, self).start(*args, **kwargs)
+
+    async def process_commands(self, message: discord.Message):
+        if message.author.bot:
+            return
+
+        ctx = await self.get_context(message, cls=Context)
+        await self.invoke(ctx)
