@@ -36,28 +36,39 @@ class PollManagerCog(Cog):
         self.listening_messages = []
         self.locks = {}
 
-    async def delete_reaction(self, payload: discord.RawReactionActionEvent):
-        message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-        self.bot.loop.create_task(message.remove_reaction(
-            payload.emoji,
-            self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
-        ))
+    @Cog.listener(name="on_raw_reaction_add")
+    async def watch_vote_add(self, payload: discord.RawReactionActionEvent):
+        """
+        1... hiddenの場合
+            1.... すでに投票している選択肢の場合、voteを消してリアクションを消してend
+                2.... リアクションを消してend
+            2... 投票している選択肢の場合、何もせずend
+            3... 投票していない選択肢の場合、リアクションを消してend
+        """
+        member = self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
+        if member.bot:
+            return
+        if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
+            return
+        r = await self.vote_add_action(payload)
+        if r is None:
+            return
+        if r.limit is None:
+            return
+        if payload.user_id not in self.locks.keys():
+            self.locks[payload.user_id] = asyncio.Lock()
 
-    async def vote_remove_action(self, payload: discord.RawReactionActionEvent) -> Optional[Poll]:
-        async with self.bot.db.SerializedSession() as session:
-            async with session.begin():
-                query = select(Poll)\
-                    .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
-                    .options(selectinload(Poll.choices).selectinload(Choice.votes))
-                result = await session.execute(query)
-                poll = result.scalars().first()
-                if poll is None or poll.hidden:
-                    return poll
-
-                targets = [i for i in poll.choices if is_voted(payload.user_id, i)]
-                if targets:
-                    vote = get_my_vote(payload.user_id, targets[0])
-                    await session.delete(vote)
+        async with self.locks[payload.user_id]:
+            count = 0
+            message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+            for reaction in message.reactions:
+                users = await reaction.users(limit=1, after=FakeUser(payload.user_id - 1)).flatten()
+                if not users:
+                    continue
+                if users[0].id == payload.user_id:
+                    count += 1
+            if count > r.limit:
+                await message.remove_reaction(payload.emoji, member)
 
     @Cog.listener(name="on_raw_reaction_remove")
     async def watch_vote_remove(self, payload: discord.RawReactionActionEvent):
@@ -122,39 +133,28 @@ class PollManagerCog(Cog):
                 if poll.hidden:
                     await self.delete_reaction(payload)
 
-    @Cog.listener(name="on_raw_reaction_add")
-    async def watch_vote_add(self, payload: discord.RawReactionActionEvent):
-        """
-        1... hiddenの場合
-            1.... すでに投票している選択肢の場合、voteを消してリアクションを消してend
-                2.... リアクションを消してend
-            2... 投票している選択肢の場合、何もせずend
-            3... 投票していない選択肢の場合、リアクションを消してend
-        """
-        member = self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
-        if member.bot:
-            return
-        if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
-            return
-        r = await self.vote_add_action(payload)
-        if r is None:
-            return
-        if r.limit is None:
-            return
-        if payload.user_id not in self.locks.keys():
-            self.locks[payload.user_id] = asyncio.Lock()
+    async def delete_reaction(self, payload: discord.RawReactionActionEvent):
+        message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        self.bot.loop.create_task(message.remove_reaction(
+            payload.emoji,
+            self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
+        ))
 
-        async with self.locks[payload.user_id]:
-            count = 0
-            message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
-            for reaction in message.reactions:
-                users = await reaction.users(limit=1, after=FakeUser(payload.user_id - 1)).flatten()
-                if not users:
-                    continue
-                if users[0].id == payload.user_id:
-                    count += 1
-            if count > r.limit:
-                await message.remove_reaction(payload.emoji, member)
+    async def vote_remove_action(self, payload: discord.RawReactionActionEvent) -> Optional[Poll]:
+        async with self.bot.db.SerializedSession() as session:
+            async with session.begin():
+                query = select(Poll)\
+                    .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
+                    .options(selectinload(Poll.choices).selectinload(Choice.votes))
+                result = await session.execute(query)
+                poll = result.scalars().first()
+                if poll is None or poll.hidden:
+                    return poll
+
+                targets = [i for i in poll.choices if is_voted(payload.user_id, i)]
+                if targets:
+                    vote = get_my_vote(payload.user_id, targets[0])
+                    await session.delete(vote)
 
 
 def setup(bot):
