@@ -39,11 +39,11 @@ class PollCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
 
-    def is_emoji(self, text):
+    def is_emoji(self, text: str) -> bool:
         # TODO: discordで追加された絵文字かどうかの判定
-        return text in UNICODE_EMOJI["en"].keys()
+        return text in UNICODE_EMOJI["en"].keys()  # type: ignore
 
-    def parse_choices(self, choices: List[str]):
+    def parse_choices(self, choices: List[str]) -> List[Tuple[str, str]]:
         results = []
         if len(choices) > 20:
             raise ValueError("選択肢が20個を超えています。")
@@ -52,7 +52,7 @@ class PollCog(Cog):
 
         return results
 
-    def parse_choices_with_emoji(self, choices: List[str]):
+    def parse_choices_with_emoji(self, choices: List[str]) -> List[Tuple[str, str]]:
         results = []
         while choices:
             emoji = choices.pop(0)
@@ -63,38 +63,38 @@ class PollCog(Cog):
 
         return results
 
-    def parse_args(self, *args: str):
-        args = list(args)
+    def parse_args(self, *args: str) -> Tuple[bool, str, List[Tuple[str, str]]]:
+        params = list(args)
         hidden = False
-        first = args.pop(0)
+        first = params.pop(0)
         if first == "hidden":
             hidden = True
-            title = args.pop(0)
+            title = params.pop(0)
         else:
             title = first
 
-        if not args:
+        if not params:
             return hidden, title, [("\U00002b55", "\U00002b55"), ("\U0000274c", "\U0000274c")]
 
         # parse choices
-        if all(map(self.is_emoji, args)):
-            return hidden, title, [(i, i) for i in args]
+        if all(map(self.is_emoji, params)):
+            return hidden, title, [(i, i) for i in params]
 
-        if self.is_emoji(args[0]):
-            return hidden, title, self.parse_choices_with_emoji(args)
-        return hidden, title, self.parse_choices(args)
+        if self.is_emoji(params[0]):
+            return hidden, title, self.parse_choices_with_emoji(params)
+        return hidden, title, self.parse_choices(params)
 
     async def create_poll(self,
                           ctx: Context,
                           title: str,
                           choices: List[Tuple[str, str]],
                           limit: Optional[int] = None,
-                          hidden: bool = False):
+                          hidden: bool = False) -> None:
         # TODO 書く
         print(choices)
 
     @group()
-    async def poll(self, ctx: Context, *args: tuple):
+    async def poll(self, ctx: Context, *args: str) -> None:
         """
         投票を作成します。
         タイトルの前にhiddenと入力すると投票した瞬間にリアクションが消え投票を隠すことができます。
@@ -118,12 +118,12 @@ class PollCog(Cog):
         await self.create_poll(ctx, title, choices, None, is_hidden)
 
     @poll.error
-    async def poll_error(self, ctx: Context, exception: Exception):
+    async def poll_error(self, ctx: Context, exception: Exception) -> None:
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
 
     @poll.command(name="limited", aliases=["lim", "l"])
-    async def limited_poll(self, ctx: Context, num: int, *args: tuple):
+    async def limited_poll(self, ctx: Context, num: int, *args: str) -> None:
         """
         投票できる個数を制限した投票を作成します。
         `poll limited <投票可能数> [hidden] <投票タイトル> [[絵文字] [選択肢]]...`
@@ -144,7 +144,7 @@ class PollCog(Cog):
         await self.create_poll(ctx, title, choices, num, is_hidden)
 
     @limited_poll.error
-    async def limited_poll_error(self, ctx: Context, exception: Exception):
+    async def limited_poll_error(self, ctx: Context, exception: Exception) -> None:
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
 

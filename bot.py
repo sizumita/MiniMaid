@@ -19,7 +19,7 @@ class MiniMaid(commands.Bot):
         await self.db.start()
         await super(MiniMaid, self).start(*args, **kwargs)
 
-    async def process_commands(self, message: discord.Message):
+    async def process_commands(self, message: discord.Message) -> None:
         if message.author.bot:
             return
 
