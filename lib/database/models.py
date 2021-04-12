@@ -51,6 +51,6 @@ class Choice(Base):
 
     emoji = Column(String)  # 投票用の絵文字
     value = Column(String)  # 選択肢のテキスト
-    users = Column(ARRAY(BigInteger))  # 投票したユーザー
+    users = Column(ARRAY(BigInteger), default=[])  # 投票したユーザー
 
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -134,7 +134,7 @@ class PollCog(Cog):
         for emoji, _ in choices:
             await poll_message.add_reaction(emoji)
 
-    @group()
+    @group(invoke_without_command=True)
     async def poll(self, ctx: Context, *args: str) -> None:
         """
         投票を作成します。
