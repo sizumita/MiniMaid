@@ -3,18 +3,25 @@ from sqlalchemy.future import select
 from lib.database.models import Poll, Choice, Vote
 from sqlalchemy.orm import selectinload
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import discord
 
 if TYPE_CHECKING:
     from bot import MiniMaid
 
 
-def is_voted(user_id: int, choice: Choice):
+def is_voted(user_id: int, choice: Choice) -> bool:
     for x in choice.votes:
         if x.user_id == user_id:
             return True
     return False
+
+
+def get_my_vote(user_id: int, choice: Choice) -> Optional[Vote]:
+    for x in choice.votes:
+        if x.user_id == user_id:
+            return x
+    return None
 
 
 class PollManagerCog(Cog):
@@ -29,8 +36,32 @@ class PollManagerCog(Cog):
             self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
         ))
 
+    @Cog.listener(name="on_raw_reaction_remove")
+    async def watch_vote_remove(self, payload: discord.RawReactionActionEvent):
+        user = self.bot.get_user(payload.user_id)
+        if user.bot:
+            return
+        if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
+            return
+
+        async with self.bot.db.Session() as session:
+            async with session.begin(subtransactions=True):
+                query = select(Poll)\
+                    .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
+                    .with_for_update()\
+                    .options(selectinload(Poll.choices).selectinload(Choice.votes))
+                result = await session.execute(query)
+                poll = result.scalars().first()
+                if poll is None or poll.hidden:
+                    return
+
+                targets = [i for i in poll.choices if is_voted(payload.user_id, i)]
+                if targets:
+                    vote = get_my_vote(payload.user_id, targets[0])
+                    await session.delete(vote)
+
     @Cog.listener(name="on_raw_reaction_add")
-    async def watch_vote(self, payload: discord.RawReactionActionEvent):
+    async def watch_vote_add(self, payload: discord.RawReactionActionEvent):
         """
         1. 個数制限がある場合
             1.. 個数制限の上限になっている場合
@@ -66,7 +97,9 @@ class PollManagerCog(Cog):
                         targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
                         if targets:
                             if poll.hidden:
-                                await session.delete(targets[0])
+                                vote = get_my_vote(payload.user_id, targets[0])
+                                if vote is not None:
+                                    await session.delete(vote)
                                 await self.delete_reaction(payload)
                             return
                         await self.delete_reaction(payload)
@@ -76,7 +109,9 @@ class PollManagerCog(Cog):
 
                 if targets:
                     if poll.hidden:
-                        await session.delete(targets[0])
+                        vote = get_my_vote(payload.user_id, targets[0])
+                        if vote is not None:
+                            await session.delete(vote)
                         await self.delete_reaction(payload)
                     return
 
