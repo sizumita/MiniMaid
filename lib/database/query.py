@@ -25,7 +25,7 @@ def create_poll(
         title=title,
         limit=limit,
         hidden=hidden,
-        choices=[Choice(emoji=str(emoji), value=str(value), users=[]) for (emoji, value) in choices],
+        choices=[Choice(emoji=str(emoji), value=str(value)) for (emoji, value) in choices],
         guild_id=guild_id,
         channel_id=channel_id,
         message_id=message_id,

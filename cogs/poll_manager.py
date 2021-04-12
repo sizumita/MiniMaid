@@ -1,6 +1,6 @@
 from discord.ext.commands import Cog
 from sqlalchemy.future import select
-from lib.database.models import Poll
+from lib.database.models import Poll, Choice, Vote
 from sqlalchemy.orm import selectinload
 
 from typing import TYPE_CHECKING
@@ -8,6 +8,13 @@ import discord
 
 if TYPE_CHECKING:
     from bot import MiniMaid
+
+
+def is_voted(user_id: int, choice: Choice):
+    for x in choice.votes:
+        if x.user_id == user_id:
+            return True
+    return False
 
 
 class PollManagerCog(Cog):
@@ -24,6 +31,17 @@ class PollManagerCog(Cog):
 
     @Cog.listener(name="on_raw_reaction_add")
     async def watch_vote(self, payload: discord.RawReactionActionEvent):
+        """
+        1. 個数制限がある場合
+            1.. 個数制限の上限になっている場合
+                1... hiddenの場合
+                    1.... すでに投票している選択肢の場合、voteを消してリアクションを消してend
+                    2.... リアクションを消してend
+                2... 投票している選択肢の場合、何もせずend
+                3... 投票していない選択肢の場合、リアクションを消してend
+            2.. すでに投票している選択肢の場合、何もせずend
+            3.. 投票していない選択肢の場合、voteを増やしてend
+        """
         user = self.bot.get_user(payload.user_id)
         if user.bot:
             return
@@ -35,36 +53,40 @@ class PollManagerCog(Cog):
                 query = select(Poll)\
                     .filter_by(guild_id=payload.guild_id, channel_id=payload.channel_id, message_id=payload.message_id) \
                     .with_for_update()\
-                    .options(selectinload(Poll.choices))
+                    .options(selectinload(Poll.choices).selectinload(Choice.votes))
                 result = await session.execute(query)
                 poll = result.scalars().first()
                 if poll is None:
                     return
-                how_many_user_voted = sum([1 for c in poll.choices if payload.user_id in c.users])
+
+                voted_choices = [choice for choice in poll.choices if is_voted(payload.user_id, choice)]
 
                 if poll.limit is not None:
-                    if how_many_user_voted == poll.limit:
-                        try:
-                            await self.delete_reaction(payload)
-                        except discord.Forbidden:
-                            pass
+                    if len(voted_choices) >= poll.limit:
+                        targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
+                        if targets:
+                            if poll.hidden:
+                                await session.delete(targets[0])
+                                await self.delete_reaction(payload)
+                            return
+                        await self.delete_reaction(payload)
                         return
 
-                choice = [i for i in poll.choices if i.emoji == str(payload.emoji)][0]
-                if payload.user_id in choice.users:
+                targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
+
+                if targets:
                     if poll.hidden:
-                        users = list(choice.users)
-                        users.remove(payload.user_id)
-                        choice.users = users
+                        await session.delete(targets[0])
                         await self.delete_reaction(payload)
-                    else:
-                        return
-                else:
-                    users = list(choice.users)
-                    users.append(payload.user_id)
-                    choice.users = users
-                    if poll.hidden:
-                        await self.delete_reaction(payload)
+                    return
+
+                targets = [i for i in poll.choices if i.emoji == str(payload.emoji)]
+                if not targets:
+                    return
+
+                session.add(Vote(choice_id=targets[0].id, user_id=payload.user_id))
+                if poll.hidden:
+                    await self.delete_reaction(payload)
 
 
 def setup(bot):

@@ -51,6 +51,17 @@ class Choice(Base):
 
     emoji = Column(String)  # 投票用の絵文字
     value = Column(String)  # 選択肢のテキスト
-    users = Column(ARRAY(BigInteger), default=[])  # 投票したユーザー
+    votes = relationship("Vote")  # 投票したユーザー
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Vote(Base):
+    __tablename__ = "votes"
+    id = Column(Integer, primary_key=True)
+    choice_id = Column(Integer, ForeignKey('choices.id'))
+    choice = relationship("Choice", back_populates="votes")
+
+    user_id = Column(BigInteger)
 
     created_at = Column(DateTime, default=datetime.utcnow)
