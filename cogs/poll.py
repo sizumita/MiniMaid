@@ -41,7 +41,7 @@ class PollCog(Cog):
 
     def is_emoji(self, text):
         # TODO: discordで追加された絵文字かどうかの判定
-        return text in UNICODE_EMOJI
+        return text in UNICODE_EMOJI["en"].keys()
 
     def parse_choices(self, choices: List[str]):
         results = []
