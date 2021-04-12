@@ -91,7 +91,7 @@ class PollCog(Cog):
                           limit: Optional[int] = None,
                           hidden: bool = False):
         # TODO 書く
-        pass
+        print(choices)
 
     @group()
     async def poll(self, ctx: Context, *args: tuple):
@@ -117,7 +117,7 @@ class PollCog(Cog):
         is_hidden, title, choices = self.parse_args(*args)
         await self.create_poll(ctx, title, choices, None, is_hidden)
 
-    @poll.error()
+    @poll.error
     async def poll_error(self, ctx: Context, exception: Exception):
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
@@ -143,7 +143,7 @@ class PollCog(Cog):
         is_hidden, title, choices = self.parse_args(*args)
         await self.create_poll(ctx, title, choices, num, is_hidden)
 
-    @limited_poll.error()
+    @limited_poll.error
     async def limited_poll_error(self, ctx: Context, exception: Exception):
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
