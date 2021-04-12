@@ -1,14 +1,16 @@
 from discord.ext.commands import (
     Cog,
-    group
+    group,
+    guild_only
 )
-from lib.database.query import create_poll
-from lib.embed import make_poll_embed, make_poll_reserve_embed
+from lib.database.query import create_poll, get_poll_by_id
+from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed
 import discord
 from lib.context import Context
 import re
 from emoji import UNICODE_EMOJI
 from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+from lib.database.models import Poll
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -135,6 +137,7 @@ class PollCog(Cog):
             await poll_message.add_reaction(emoji)
 
     @group(invoke_without_command=True)
+    @guild_only()
     async def poll(self, ctx: Context, *args: str) -> None:
         """
         投票を作成します。
@@ -198,6 +201,35 @@ class PollCog(Cog):
         if isinstance(exception, ValueError):
             await ctx.error(f"エラー: {exception.args[0]}")
         raise exception
+
+    @poll.command(name="result")
+    async def pull_result(self, ctx: Context, poll_id: int):
+        async with self.bot.db.Session() as session:
+            result = await session.execute(get_poll_by_id(poll_id))
+            poll: Poll = result.scalars().first()
+            if poll is None or poll.guild_id != ctx.guild.id:
+                await ctx.error(f"ID: {poll_id}の投票が見つかりません。")
+                await session.rollback()
+                return
+
+        if not poll.hidden:
+            message = await self.bot.get_channel(poll.channel_id).fetch_message(poll.message_id)
+            results = {}
+            for reaction in message.reactions:
+                results[str(reaction.emoji)] = len([i for i in await reaction.users().flatten() if not i.bot])
+        else:
+            results = {}
+            for choice in poll.choices:
+                results[choice.emoji] = len(choice.votes)
+
+        result_choices = []
+        all_vote_count = sum(results.values())
+        for choice in poll.choices:
+            result_choices.append(
+                # choice, count, percent
+                (choice, results[choice.emoji], 0 if results[choice.emoji] == 0 else results[choice.emoji] / all_vote_count * 100)
+            )
+        await ctx.embed(make_poll_result_embed(ctx, poll, result_choices))
 
 
 def setup(bot: 'MiniMaid') -> None:

@@ -2,6 +2,7 @@ from sqlalchemy.future import select
 from sqlalchemy.sql import Select
 from lib.database.models import Party, Poll, Choice
 from typing import Optional
+from sqlalchemy.orm import selectinload
 
 
 def select_party(guild_id: int, name: str) -> Select:
@@ -31,3 +32,7 @@ def create_poll(
         message_id=message_id,
         owner_id=owner_id
     )
+
+
+def get_poll_by_id(poll_id: int):
+    return select(Poll).where(Poll.id == poll_id).options(selectinload(Poll.choices).selectinload(Choice.votes))
