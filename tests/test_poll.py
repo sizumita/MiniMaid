@@ -30,6 +30,13 @@ def test_parse_args_4():
            (True, "a", [("\U00002b55", "b"), ("\U0000274c", "c")])
 
 
+def test_parse_args_5():
+    cog = PollCog(FakeBot())
+    assert cog.parse_args("a") \
+           == \
+           (False, "a", [("\U00002b55", "\U00002b55"), ("\U0000274c", "\U0000274c")])
+
+
 def test_is_emoji_1():
     cog = PollCog(FakeBot())
     assert cog.is_emoji("\U00002b55")
