@@ -199,21 +199,6 @@ class PollCog(Cog):
             await ctx.error(f"エラー: {exception.args[0]}")
         raise exception
 
-    @group()
-    async def debug(self, ctx, _id: int):
-        from sqlalchemy.future import select
-        from lib.database.models import Poll, Choice
-        from sqlalchemy.orm import selectinload
-        async with self.bot.db.Session() as session:
-            async with session.begin():
-                query = select(Poll) \
-                    .where(Poll.id==_id) \
-                    .options(selectinload(Poll.choices).selectinload(Choice.votes))
-                result = await session.execute(query)
-                t = result.scalars().first()
-                for choice in t.choices:
-                    print(choice.emoji, choice.votes)
-
 
 def setup(bot: 'MiniMaid') -> None:
     return bot.add_cog(PollCog(bot))
