@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import sessionmaker
 from os import environ
 from typing import Optional
+import asyncpg
 
 from lib.database.base import Base
 
@@ -18,6 +19,9 @@ class Database:
         self.serialized_engine = self.engine.execution_options(isolation_level="SERIALIZABLE")
         self.Session: Optional[sessionmaker] = None
         self.SerializedSession: Optional[sessionmaker] = None
+
+    async def get_asyncpg_connection(self):
+        return await asyncpg.connect(environ["DATABASE_URL"].replace("+asyncpg", ""))
 
     async def start(self) -> None:
         async with self.engine.begin() as conn:

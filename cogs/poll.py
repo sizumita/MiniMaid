@@ -11,7 +11,10 @@ from lib.context import Context
 import re
 from emoji import UNICODE_EMOJI
 from typing import TYPE_CHECKING, Optional, List, Tuple, Any
-from lib.database.models import Poll
+from sqlalchemy import text as sql_text
+import pandas as pd
+import asyncpg
+from lib.database.models import Poll, Vote
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -235,7 +238,7 @@ class PollCog(Cog):
                 results[choice.emoji] = len(choice.votes)
         elif poll.ended_at is not None:
             for choice in poll.choices:
-                results[choice.emoji] = choice.vote_count
+                results[choice.emoji] = len(choice.votes)
         else:
             message = await self.bot.get_channel(poll.channel_id).fetch_message(poll.message_id)
             for reaction in message.reactions:
@@ -277,14 +280,21 @@ class PollCog(Cog):
                     return
 
                 poll.ended_at = datetime.datetime.utcnow()
-                data = {}
+                choices = {c.emoji: c for c in poll.choices}
+                adds = []
                 for reaction in message.reactions:
-                    if reaction.me:
-                        data[str(reaction.emoji)] = reaction.count-1
+                    if str(reaction.emoji) not in choices.keys():
                         continue
-                    data[str(reaction.emoji)] = reaction.count
-                for choice in poll.choices:
-                    choice.vote_count = data[choice.emoji]
+                    async for user in reaction.users():
+                        if user.id == self.bot.user.id:
+                            continue
+                        adds.append([choices[str(reaction.emoji)].id, user.id])
+        conn = await self.bot.db.get_asyncpg_connection()
+        await conn.copy_records_to_table(
+            "votes",
+            records=adds,
+            columns=['choice_id', 'user_id'])
+        await conn.close()
 
         await ctx.success("投票を終了しました", f"ID: {poll_id}の投票を終了しました。")
         await message.edit(embed=change_footer(message.embeds[0], "投票は終了しました。"))
