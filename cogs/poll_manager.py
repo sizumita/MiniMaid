@@ -59,6 +59,7 @@ class PollManagerCog(Cog):
 
         async with self.locks[payload.user_id]:
             count = 0
+            reactions = []
             message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
             for reaction in message.reactions:
                 users = await reaction.users(limit=1, after=FakeUser(payload.user_id - 1)).flatten()
@@ -66,8 +67,11 @@ class PollManagerCog(Cog):
                     continue
                 if users[0].id == payload.user_id:
                     count += 1
+                    if str(payload.emoji) != str(reaction.emoji):
+                        reactions.append(reaction.emoji)
             if count > r.limit:
-                await message.remove_reaction(payload.emoji, member)
+                if reactions:
+                    await message.remove_reaction(reactions[0], member)
 
     @Cog.listener(name="on_raw_reaction_remove")
     async def watch_vote_remove(self, payload: discord.RawReactionActionEvent) -> None:

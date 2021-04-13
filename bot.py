@@ -8,9 +8,11 @@ from lib.context import Context
 
 class MiniMaid(commands.Bot):
     def __init__(self) -> None:
+        intents = discord.Intents.default()
+        intents.members = True
         super(MiniMaid, self).__init__(
             command_prefix=commands.when_mentioned_or(environ["PREFIX"]),
-            intents=discord.Intents.all(),
+            intents=intents,
             help_command=None
         )
         self.db = Database()

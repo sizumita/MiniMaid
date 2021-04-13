@@ -80,21 +80,20 @@ class PollCog(Cog):
 
     def parse_choices_with_emoji(self, choices: List[str]) -> List[Tuple[str, str]]:
         results = []
+        i = 0
         while choices:
             emoji = choices.pop(0)
             if self.is_emoji(emoji):
                 text = choices.pop(0)
                 results.append((emoji, text))
-                continue
-
             elif self.is_discord_emoji(emoji):
                 emoji_o = self.get_discord_emoji(emoji)
                 text = choices.pop(0)
                 results.append((emoji_o, text))
-                continue
+            else:
+                results.append((default_emojis[i], emoji))
 
-            raise ValueError(f"絵文字がくるべきでしたが、絵文字ではありませんでした: {emoji}")
-
+            i += 1
         return results
 
     def parse_args(self, *args: str) -> Tuple[bool, str, List[Tuple[Any, Any]]]:
@@ -240,8 +239,7 @@ class PollCog(Cog):
         else:
             message = await self.bot.get_channel(poll.channel_id).fetch_message(poll.message_id)
             for reaction in message.reactions:
-                results[str(reaction.emoji)] = len([i for i in await reaction.users().flatten() if not i.bot]) \
-                                               - (1 if reaction.me else 0)
+                results[str(reaction.emoji)] = reaction.count - (1 if reaction.me else 0)
 
         result_choices = []
         all_vote_count = sum(results.values())
