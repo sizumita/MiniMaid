@@ -1,13 +1,13 @@
 from discord.ext import commands
 import discord
-from typing import Optional
+from typing import Optional, Any
 
 
 class FakeEmoji(discord.Emoji):
-    def __init__(self, _id) -> None:
+    def __init__(self, _id: int) -> None:
         self.id = _id
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, FakeEmoji):
             return other.id == self.id
         return False

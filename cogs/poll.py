@@ -203,7 +203,7 @@ class PollCog(Cog):
         raise exception
 
     @poll.command(name="result")
-    async def pull_result(self, ctx: Context, poll_id: int):
+    async def pull_result(self, ctx: Context, poll_id: int) -> None:
         async with self.bot.db.Session() as session:
             result = await session.execute(get_poll_by_id(poll_id))
             poll: Poll = result.scalars().first()

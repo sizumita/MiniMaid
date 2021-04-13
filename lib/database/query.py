@@ -34,5 +34,5 @@ def create_poll(
     )
 
 
-def get_poll_by_id(poll_id: int):
+def get_poll_by_id(poll_id: int) -> Select:
     return select(Poll).where(Poll.id == poll_id).options(selectinload(Poll.choices).selectinload(Choice.votes))

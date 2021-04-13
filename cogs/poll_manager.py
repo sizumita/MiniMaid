@@ -3,7 +3,7 @@ from sqlalchemy.future import select
 from lib.database.models import Poll, Choice, Vote
 from sqlalchemy.orm import selectinload
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Dict
 import asyncio
 import discord
 
@@ -26,18 +26,17 @@ def get_my_vote(user_id: int, choice: Choice) -> Optional[Vote]:
 
 
 class FakeUser:
-    def __init__(self, _id):
+    def __init__(self, _id: int) -> None:
         self.id = _id
 
 
 class PollManagerCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
-        self.listening_messages = []
-        self.locks = {}
+        self.locks: Dict[str, asyncio.Lock] = {}
 
     @Cog.listener(name="on_raw_reaction_add")
-    async def watch_vote_add(self, payload: discord.RawReactionActionEvent):
+    async def watch_vote_add(self, payload: discord.RawReactionActionEvent) -> None:
         """
         1... hiddenの場合
             1.... すでに投票している選択肢の場合、voteを消してリアクションを消してend
@@ -71,7 +70,7 @@ class PollManagerCog(Cog):
                 await message.remove_reaction(payload.emoji, member)
 
     @Cog.listener(name="on_raw_reaction_remove")
-    async def watch_vote_remove(self, payload: discord.RawReactionActionEvent):
+    async def watch_vote_remove(self, payload: discord.RawReactionActionEvent) -> None:
         member = self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
         if member.bot:
             return
@@ -111,9 +110,9 @@ class PollManagerCog(Cog):
                                 if vote is not None:
                                     await session.delete(vote)
                                 await self.delete_reaction(payload)
-                            return
+                            return None
                         await self.delete_reaction(payload)
-                        return
+                        return None
 
                 targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
 
@@ -123,17 +122,18 @@ class PollManagerCog(Cog):
                         if vote is not None:
                             await session.delete(vote)
                         await self.delete_reaction(payload)
-                    return
+                    return None
 
                 targets = [i for i in poll.choices if i.emoji == str(payload.emoji)]
                 if not targets:
-                    return
+                    return None
 
                 session.add(Vote(choice_id=targets[0].id, user_id=payload.user_id))
                 if poll.hidden:
                     await self.delete_reaction(payload)
+        return None
 
-    async def delete_reaction(self, payload: discord.RawReactionActionEvent):
+    async def delete_reaction(self, payload: discord.RawReactionActionEvent) -> None:
         message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
         self.bot.loop.create_task(message.remove_reaction(
             payload.emoji,
@@ -155,7 +155,8 @@ class PollManagerCog(Cog):
                 if targets:
                     vote = get_my_vote(payload.user_id, targets[0])
                     await session.delete(vote)
+        return None
 
 
-def setup(bot):
+def setup(bot: 'MiniMaid') -> None:
     return bot.add_cog(PollManagerCog(bot))
