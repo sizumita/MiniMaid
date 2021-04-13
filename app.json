@@ -1,0 +1,26 @@
+{
+    "name": "MiniMaid",
+    "description": "A multifunctional discord bot for minimum servers.",
+    "repository": "https://github.com/sizumita/MiniMaid",
+    "formation": [
+        {
+            "process": "bot",
+            "quantity": 1,
+            "size": "free"
+        }
+    ],
+    "addons": [
+        {
+            "plan": "heroku-postgresql",
+            "options": {
+                "version": "13"
+            }
+        }
+    ],
+    "env": {
+        "BOT_TOKEN": {
+            "description": "Discord bot token",
+            "required": true
+        }
+    }
+}
