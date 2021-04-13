@@ -2,7 +2,7 @@ from discord.ext.commands import Cog
 from sqlalchemy.future import select
 from lib.database.models import Poll, Choice, Vote
 from sqlalchemy.orm import selectinload
-
+from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Dict
 import asyncio
 import discord
@@ -96,32 +96,32 @@ class PollManagerCog(Cog):
                     .options(selectinload(Poll.choices).selectinload(Choice.votes))
                 result = await session.execute(query)
                 poll = result.scalars().first()
-                if poll is None or not poll.hidden:
+                if poll is None:
+                    return poll
+                if poll.ended_at is not None and poll.ended_at <= datetime.utcnow():
+                    return None
+                if not poll.hidden:
                     return poll
 
                 voted_choices = [choice for choice in poll.choices if is_voted(payload.user_id, choice)]
+                targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
 
                 if poll.limit is not None:
                     if len(voted_choices) >= poll.limit:
-                        targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
                         if targets:
-                            if poll.hidden:
-                                vote = get_my_vote(payload.user_id, targets[0])
-                                if vote is not None:
-                                    await session.delete(vote)
-                                await self.delete_reaction(payload)
+                            vote = get_my_vote(payload.user_id, targets[0])
+                            if vote is not None:
+                                await session.delete(vote)
+                            await self.delete_reaction(payload)
                             return None
                         await self.delete_reaction(payload)
                         return None
 
-                targets = [i for i in voted_choices if i.emoji == str(payload.emoji)]
-
                 if targets:
-                    if poll.hidden:
-                        vote = get_my_vote(payload.user_id, targets[0])
-                        if vote is not None:
-                            await session.delete(vote)
-                        await self.delete_reaction(payload)
+                    vote = get_my_vote(payload.user_id, targets[0])
+                    if vote is not None:
+                        await session.delete(vote)
+                    await self.delete_reaction(payload)
                     return None
 
                 targets = [i for i in poll.choices if i.emoji == str(payload.emoji)]
@@ -148,7 +148,11 @@ class PollManagerCog(Cog):
                     .options(selectinload(Poll.choices).selectinload(Choice.votes))
                 result = await session.execute(query)
                 poll = result.scalars().first()
-                if poll is None or poll.hidden:
+                if poll is None:
+                    return poll
+                if poll.ended_at is not None and poll.ended_at <= datetime.utcnow():
+                    return None
+                if not poll.hidden:
                     return poll
 
                 targets = [i for i in poll.choices if is_voted(payload.user_id, i)]

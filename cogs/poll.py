@@ -3,8 +3,9 @@ from discord.ext.commands import (
     group,
     guild_only
 )
+import datetime
 from lib.database.query import create_poll, get_poll_by_id
-from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed
+from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed, change_footer, make_poll_help_embed
 import discord
 from lib.context import Context
 import re
@@ -43,6 +44,12 @@ default_emojis = [
 class PollCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
+
+    async def fetch_message(self, channel_id: int, message_id: int) -> Optional[discord.Message]:
+        channel = self.bot.get_channel(channel_id)
+        if channel is None:
+            return None
+        return await channel.fetch_message(message_id)
 
     @staticmethod
     def is_emoji(text: str) -> bool:
@@ -158,6 +165,10 @@ class PollCog(Cog):
 
             `poll ねこ 😸 😻 😹`
         """
+        if not args:
+            await ctx.embed(make_poll_help_embed(ctx))
+            return
+
         params = []
         for arg in args:
             if len(arg) == 2:
@@ -211,25 +222,74 @@ class PollCog(Cog):
                 await ctx.error(f"ID: {poll_id}の投票が見つかりません。")
                 await session.rollback()
                 return
+            if ctx.guild.id != poll.guild_id:
+                await ctx.error("このサーバーの投票ではありません。")
+                return
+            message = await self.fetch_message(poll.channel_id, poll.message_id)
+            if message is None:
+                await ctx.error("投票のメッセージを取得できません。")
+                return
 
-        if not poll.hidden:
-            message = await self.bot.get_channel(poll.channel_id).fetch_message(poll.message_id)
-            results = {}
-            for reaction in message.reactions:
-                results[str(reaction.emoji)] = len([i for i in await reaction.users().flatten() if not i.bot])
-        else:
-            results = {}
+        results = {}
+        if poll.hidden:
             for choice in poll.choices:
                 results[choice.emoji] = len(choice.votes)
+        elif poll.ended_at is not None:
+            for choice in poll.choices:
+                results[choice.emoji] = choice.vote_count
+        else:
+            message = await self.bot.get_channel(poll.channel_id).fetch_message(poll.message_id)
+            for reaction in message.reactions:
+                results[str(reaction.emoji)] = len([i for i in await reaction.users().flatten() if not i.bot]) \
+                                               - (1 if reaction.me else 0)
 
         result_choices = []
         all_vote_count = sum(results.values())
         for choice in poll.choices:
             result_choices.append(
                 # choice, count, percent
-                (choice, results[choice.emoji], 0 if results[choice.emoji] == 0 else results[choice.emoji] / all_vote_count * 100)
+                (choice,
+                 results[choice.emoji],
+                 0 if results[choice.emoji] == 0 else results[choice.emoji] / all_vote_count * 100)
             )
         await ctx.embed(make_poll_result_embed(self.bot, ctx, poll, result_choices))
+
+    @poll.command(name="end")
+    async def end_poll(self, ctx: Context, poll_id: int) -> None:
+        async with self.bot.db.SerializedSession() as session:
+            async with session.begin():
+                result = await session.execute(get_poll_by_id(poll_id))
+                poll = result.scalars().first()
+                if poll is None:
+                    await ctx.error(f"ID: {poll_id}の投票が見つかりません。")
+                    return
+                if ctx.guild.id != poll.guild_id:
+                    await ctx.error("このサーバーの投票ではありません。")
+                    return
+                if poll.ended_at is not None:
+                    await ctx.error(f"ID: {poll_id}の投票はすでに終了しています。")
+                    return
+                if not ctx.author.guild_permissions.manage_guild and ctx.author.id != poll.owner_id:
+                    await ctx.error("終了させる権限がありません。(投票の作成者もしくはサーバーの管理 権限を持っているユーザーが可能です。)")
+                    return
+
+                message = await self.fetch_message(poll.channel_id, poll.message_id)
+                if message is None:
+                    await ctx.error("投票のメッセージを取得できません。")
+                    return
+
+                poll.ended_at = datetime.datetime.utcnow()
+                data = {}
+                for reaction in message.reactions:
+                    if reaction.me:
+                        data[str(reaction.emoji)] = reaction.count-1
+                        continue
+                    data[str(reaction.emoji)] = reaction.count
+                for choice in poll.choices:
+                    choice.vote_count = data[choice.emoji]
+
+        await ctx.success("投票を終了しました", f"ID: {poll_id}の投票を終了しました。")
+        await message.edit(embed=change_footer(message.embeds[0], "投票は終了しました。"))
 
 
 def setup(bot: 'MiniMaid') -> None:

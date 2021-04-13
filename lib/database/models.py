@@ -52,6 +52,7 @@ class Choice(Base):
     emoji = Column(String)  # 投票用の絵文字
     value = Column(String)  # 選択肢のテキスト
     votes = relationship("Vote")  # 投票したユーザー
+    vote_count = Column(Integer)  # 投票数。ended < utc_nowの場合かつhiddenではない場合に参照する。
 
     created_at = Column(DateTime, default=datetime.utcnow)
 
