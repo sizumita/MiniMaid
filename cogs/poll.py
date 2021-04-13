@@ -229,7 +229,7 @@ class PollCog(Cog):
                 # choice, count, percent
                 (choice, results[choice.emoji], 0 if results[choice.emoji] == 0 else results[choice.emoji] / all_vote_count * 100)
             )
-        await ctx.embed(make_poll_result_embed(ctx, poll, result_choices))
+        await ctx.embed(make_poll_result_embed(self.bot, ctx, poll, result_choices))
 
 
 def setup(bot: 'MiniMaid') -> None:
