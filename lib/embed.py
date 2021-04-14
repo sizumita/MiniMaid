@@ -1,7 +1,9 @@
+from typing import TYPE_CHECKING
+
 from discord import Embed, Colour
+
 from lib.context import Context
 from lib.database.models import Poll
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bot import MiniMaid

@@ -1,20 +1,29 @@
+import datetime
+from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+import re
+
+import discord
 from discord.ext.commands import (
     Cog,
     group,
     guild_only
 )
-import datetime
-from lib.database.query import create_poll, get_poll_by_id
-from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed, change_footer, make_poll_help_embed
-import discord
-from lib.context import Context
-import re
 from emoji import UNICODE_EMOJI
-from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+
+from lib.database.query import create_poll, get_poll_by_id
+from lib.embed import (
+    make_poll_embed,
+    make_poll_reserve_embed,
+    make_poll_result_embed,
+    change_footer,
+    make_poll_help_embed
+)
+from lib.context import Context
 from lib.database.models import Poll
 
 if TYPE_CHECKING:
     from bot import MiniMaid
+
 emoji_compiled = re.compile(r"^<a?:[a-zA-Z0-9\_]+:([0-9]+)>$")
 
 default_emojis = [
@@ -39,6 +48,15 @@ default_emojis = [
     "\N{REGIONAL INDICATOR SYMBOL LETTER S}",
     "\N{REGIONAL INDICATOR SYMBOL LETTER T}",
 ]
+
+
+def check_permission(ctx: Context) -> Tuple[bool, str]:
+    permissions: discord.Permissions = ctx.channel.permissions_for(ctx.author)
+    if not permissions.add_reactions:
+        return False, "リアクションの追加"
+    if not permissions.manage_messages:
+        return False, "メッセージの管理"
+    return True, ""
 
 
 class PollCog(Cog):
@@ -164,6 +182,12 @@ class PollCog(Cog):
 
             `poll ねこ 😸 😻 😹`
         """
+        check, perm = check_permission(ctx)
+
+        if not check:
+            await ctx.error(f"{perm} 権限が必要です", f"{perm} 権限を付与してから再度実行してください。")
+            return
+
         if not args:
             await ctx.embed(make_poll_help_embed(ctx))
             return
@@ -178,12 +202,6 @@ class PollCog(Cog):
 
         is_hidden, title, choices = self.parse_args(*params)
         await self.create_poll(ctx, title, choices, None, is_hidden)
-
-    @poll.error
-    async def poll_error(self, ctx: Context, exception: Exception) -> None:
-        if isinstance(exception, ValueError):
-            await ctx.error(f"エラー: {exception.args[0]}")
-        raise exception
 
     @poll.command(name="limited", aliases=["lim", "l"])
     async def limited_poll(self, ctx: Context, num: int, *args: str) -> None:
@@ -203,14 +221,14 @@ class PollCog(Cog):
 
             `poll limited 2 hidden 緯度が日本より上の国の２つはどれか？ 🇮🇹 イタリア 🇬🇧 イギリス 🇩🇪 ドイツ 🇫🇷 フランス`
         """
+        check, perm = check_permission(ctx)
+
+        if not check:
+            await ctx.error(f"{perm} 権限が必要です", f"{perm} 権限を付与してから再度実行してください。")
+            return
+
         is_hidden, title, choices = self.parse_args(*args)
         await self.create_poll(ctx, title, choices, num, is_hidden)
-
-    @limited_poll.error
-    async def limited_poll_error(self, ctx: Context, exception: Exception) -> None:
-        if isinstance(exception, ValueError):
-            await ctx.error(f"エラー: {exception.args[0]}")
-        raise exception
 
     @poll.command(name="result")
     async def pull_result(self, ctx: Context, poll_id: int) -> None:
@@ -302,6 +320,18 @@ class PollCog(Cog):
 
         await ctx.success("投票を終了しました", f"ID: {poll_id}の投票を終了しました。")
         await message.edit(embed=change_footer(message.embeds[0], "投票は終了しました。"))
+
+    @poll.error
+    async def poll_error(self, ctx: Context, exception: Exception) -> None:
+        if isinstance(exception, ValueError):
+            await ctx.error(f"エラー: {exception.args[0]}")
+        raise exception
+
+    @limited_poll.error
+    async def limited_poll_error(self, ctx: Context, exception: Exception) -> None:
+        if isinstance(exception, ValueError):
+            await ctx.error(f"エラー: {exception.args[0]}")
+        raise exception
 
 
 def setup(bot: 'MiniMaid') -> None:

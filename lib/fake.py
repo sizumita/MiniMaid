@@ -1,6 +1,7 @@
-from discord.ext import commands
-import discord
 from typing import Optional, Any
+
+import discord
+from discord.ext import commands
 
 
 class FakeEmoji(discord.Emoji):

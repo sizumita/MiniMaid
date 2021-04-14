@@ -1,6 +1,7 @@
+from os import environ
+
 from discord.ext import commands
 import discord
-from os import environ
 
 from lib.database.database import Database
 from lib.context import Context

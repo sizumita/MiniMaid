@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
+
+import discord
 from discord.ext.commands import Cog, group, guild_only
+from sqlalchemy import update
+
 from lib.database.models import Party
 from lib.context import Context
 from lib.database.query import select_party, select_parties
-from sqlalchemy import update
-from typing import TYPE_CHECKING
-import discord
+
 
 if TYPE_CHECKING:
     from bot import MiniMaid
