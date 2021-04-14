@@ -1,23 +1,29 @@
 # MiniMaid
-A multifunctional discord bot for minimum servers.
-This bot is Japanese Bot.
+チーム分けや投票など、モデレーション以外の機能を搭載した多機能Botです。
+公式での運用をしています→[導入リンク](https://discord.com/api/oauth2/authorize?client_id=522305114757791754&permissions=4231392849&scope=bot)
+（可用性の保障はいたしません。Bot運用を推奨しています。）
 
-# Features
 
-- [ ] create team
-- [ ] dice
+# 機能
+チェックマークがあるものは完了しています。
+
+- [ ] ヘルプコマンド
+- [ ] チーム分け
+- [ ] ダイス
     - [ ] nCr
-- [ ] text to speech
+- [ ] VoiceChatでの読み上げ
     - [ ] OpenJTalk speech
-- [x] poll system
-- [x] party system
-    - [x] create party
-    - [x] add member to party
-    - [x] remove member from party
-    - [x] call party member with message (mention all party members)
-- [ ] timer
-    - [ ] set timer
-    - [ ] set timer text
+- [x] 投票システム
+- [x] パーティー
+    - [x] パーティの作成
+    - [x] パーティーへの参加
+    - [x] パーティーからの脱退
+    - [x] パーティーメンバー呼び出し (パーティーメンバー全員にメンションをする)
+- [ ] タイマー
+    - [ ] タイマーセット
+
+
+## 実装優先度が低い機能
 - [ ] youtube music player
     - [ ] queue
     - [ ] skip
@@ -34,15 +40,17 @@ This bot is Japanese Bot.
 - [ ] 日程調整機能
 
 
-# Installation
+# 開発者向け
 
-## using docker / docker-compose
+## Installation
+
+### using docker / docker-compose
 
 - pull this repo
 - install docker and docker-compose
 - build and run
 
-## using Python
+### using Python
 
 - pull this repo
 - install Python 3.8 or later
