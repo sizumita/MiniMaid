@@ -6,7 +6,9 @@ bot = MiniMaid()
 
 extensions = [
     "cogs.party",
-    "cogs.team"
+    "cogs.team",
+    "cogs.poll",
+    "cogs.poll_manager"
 ]
 
 for extension in extensions:

@@ -1,5 +1,6 @@
-from discord.ext.commands import Cog, Context, group, guild_only
+from discord.ext.commands import Cog, group, guild_only
 from lib.database.models import Party
+from lib.context import Context
 from lib.database.query import select_party, select_parties
 from sqlalchemy import update
 from typing import TYPE_CHECKING
