@@ -135,13 +135,13 @@ class PollManagerCog(Cog):
                 if any(same_emoji_votes):
                     await session.delete(same_emoji_votes[0])
                     await self.delete_reaction(payload)
-                    return
+                    return None
 
                 if poll.limit is not None and len(all_my_votes) >= poll.limit:
                     await session.delete(all_my_votes[0])
                     session.add(Vote(choice_id=choices[str(payload.emoji)].id, user_id=payload.user_id))
                     await self.delete_reaction(payload)
-                    return
+                    return None
 
                 session.add(Vote(choice_id=choices[str(payload.emoji)].id, user_id=payload.user_id))
                 await self.delete_reaction(payload)
