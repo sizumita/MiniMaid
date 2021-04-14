@@ -1,8 +1,10 @@
+from typing import Optional
+
 from sqlalchemy.future import select
 from sqlalchemy.sql import Select
-from lib.database.models import Party, Poll, Choice
-from typing import Optional
 from sqlalchemy.orm import selectinload
+
+from lib.database.models import Party, Poll, Choice
 
 
 def select_party(guild_id: int, name: str) -> Select:

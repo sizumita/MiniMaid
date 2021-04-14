@@ -1,9 +1,10 @@
 import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
 from os import environ
 from typing import Optional
+
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
 
 from lib.database.base import Base
 

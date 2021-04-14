@@ -1,5 +1,6 @@
-from bot import MiniMaid
 from os import environ
+
+from bot import MiniMaid
 
 
 bot = MiniMaid()

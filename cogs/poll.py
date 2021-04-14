@@ -1,20 +1,29 @@
+import datetime
+from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+import re
+
+import discord
 from discord.ext.commands import (
     Cog,
     group,
     guild_only
 )
-import datetime
-from lib.database.query import create_poll, get_poll_by_id
-from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed, change_footer, make_poll_help_embed
-import discord
-from lib.context import Context
-import re
 from emoji import UNICODE_EMOJI
-from typing import TYPE_CHECKING, Optional, List, Tuple, Any
+
+from lib.database.query import create_poll, get_poll_by_id
+from lib.embed import (
+    make_poll_embed,
+    make_poll_reserve_embed,
+    make_poll_result_embed,
+    change_footer,
+    make_poll_help_embed
+)
+from lib.context import Context
 from lib.database.models import Poll
 
 if TYPE_CHECKING:
     from bot import MiniMaid
+
 emoji_compiled = re.compile(r"^<a?:[a-zA-Z0-9\_]+:([0-9]+)>$")
 
 default_emojis = [

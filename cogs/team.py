@@ -1,11 +1,13 @@
-from discord.ext.commands import Cog, group, guild_only
 from typing import TYPE_CHECKING
-from more_itertools import chunked
 import random
 import discord
+
 import numpy as np
+from more_itertools import chunked
+from discord.ext.commands import Cog, group, guild_only
 
 from lib.context import Context
+
 
 if TYPE_CHECKING:
     from bot import MiniMaid

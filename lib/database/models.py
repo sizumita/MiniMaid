@@ -1,5 +1,5 @@
-from lib.database.base import Base
 from datetime import datetime
+
 from sqlalchemy.orm import relationship
 from sqlalchemy import (
     Integer,
@@ -11,6 +11,8 @@ from sqlalchemy import (
     ForeignKey,
     Boolean
 )
+
+from lib.database.base import Base
 
 
 class Party(Base):

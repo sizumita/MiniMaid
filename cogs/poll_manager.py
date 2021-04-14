@@ -1,11 +1,13 @@
-from discord.ext.commands import Cog
-from sqlalchemy.future import select
-from lib.database.models import Poll, Choice, Vote
-from sqlalchemy.orm import selectinload
+import asyncio
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Dict
-import asyncio
+
+from discord.ext.commands import Cog
+from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 import discord
+
+from lib.database.models import Poll, Choice, Vote
 
 if TYPE_CHECKING:
     from bot import MiniMaid
