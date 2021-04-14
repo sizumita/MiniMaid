@@ -4,6 +4,7 @@ from discord.ext.commands import (
     guild_only
 )
 import datetime
+from sqlalchemy import text as sql_text
 from lib.database.query import create_poll, get_poll_by_id
 from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed, change_footer, make_poll_help_embed
 import discord
@@ -11,9 +12,6 @@ from lib.context import Context
 import re
 from emoji import UNICODE_EMOJI
 from typing import TYPE_CHECKING, Optional, List, Tuple, Any
-from sqlalchemy import text as sql_text
-import pandas as pd
-import asyncpg
 from lib.database.models import Poll, Vote
 
 if TYPE_CHECKING:
@@ -282,19 +280,25 @@ class PollCog(Cog):
                 poll.ended_at = datetime.datetime.utcnow()
                 choices = {c.emoji: c for c in poll.choices}
                 adds = []
+
                 for reaction in message.reactions:
                     if str(reaction.emoji) not in choices.keys():
                         continue
                     async for user in reaction.users():
                         if user.id == self.bot.user.id:
                             continue
-                        adds.append([choices[str(reaction.emoji)].id, user.id])
-        conn = await self.bot.db.get_asyncpg_connection()
-        await conn.copy_records_to_table(
-            "votes",
-            records=adds,
-            columns=['choice_id', 'user_id'])
-        await conn.close()
+                        choice_id = choices[str(reaction.emoji)].id
+                        adds.append((choice_id, user.id, datetime.datetime.utcnow()))
+                conn = await self.bot.db.engine.raw_connection()
+                adapter = getattr(conn.cursor(), "_adapt_connection", None)
+                asyncpg_conn = getattr(adapter, "_connection", None)
+
+                await asyncpg_conn.copy_records_to_table(
+                    'votes',
+                    records=adds,
+                    columns=("choice_id", "user_id", "created_at")
+                )
+                conn.close()
 
         await ctx.success("投票を終了しました", f"ID: {poll_id}の投票を終了しました。")
         await message.edit(embed=change_footer(message.embeds[0], "投票は終了しました。"))

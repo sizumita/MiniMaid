@@ -17,6 +17,14 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
+    async def on_command_error(self, context: Context, exception: Exception):
+        if isinstance(exception, commands.CommandNotFound):
+            return
+        if isinstance(exception, commands.BadArgument):
+            await context.error("引数の解析に失敗しました。", "引数を確認して再度コマンドを実行してください。")
+            return
+        await super(MiniMaid, self).on_command_error(context, exception)
+
     async def start(self, *args: list, **kwargs: dict) -> None:
         await self.db.start()
         await super(MiniMaid, self).start(*args, **kwargs)
