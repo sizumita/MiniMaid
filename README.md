@@ -9,7 +9,7 @@ This bot is Japanese Bot.
     - [ ] nCr
 - [ ] text to speech
     - [ ] OpenJTalk speech
-- [ ] poll system
+- [x] poll system
 - [x] party system
     - [x] create party
     - [x] add member to party
