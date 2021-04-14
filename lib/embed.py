@@ -19,11 +19,11 @@ SYNTAX_MESSAGE = """
 ```
 example:
     {prefix}poll 好きな果物 りんご みかん いちご
-    
+
     {prefix}poll hidden 推しVTuber がうるぐら 委員長 船長
-    
+
     {prefix}poll いちごは果物か？
-    
+
     {prefix}poll ねこ 😸 😻 😹
 ```
 """
@@ -36,7 +36,7 @@ example:
     poll limited 1 どのチームが優勝するか 楽天 巨人 広島
 
     poll limited 2 hidden 緯度が日本より上の国の２つはどれか？ 🇮🇹 イタリア 🇬🇧 イギリス 🇩🇪 ドイツ 🇫🇷 フランス
-```        
+```
 """
 
 
@@ -92,8 +92,7 @@ def make_poll_embed(ctx: Context, poll: Poll) -> Embed:
     )
     embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url_as(format="png", size=128))
     embed.set_footer(
-        text="リアクションで投票できます。"
-             + ("匿名投票のため、投票後はリアクションが削除されます。" if poll.hidden else "")
+        text="リアクションで投票できます。" + ("匿名投票のため、投票後はリアクションが削除されます。" if poll.hidden else "")
     )
     return embed
 
@@ -110,7 +109,7 @@ def make_poll_result_embed(bot: 'MiniMaid', ctx: Context, poll: Poll, choices: l
     embed.set_footer(text=f"{ctx.prefix}poll end {poll.id} で投票を終了できます。")
 
     for choice, count, percent in choices:
-        graph = '\U00002b1c' * int(percent//10)
+        graph = '\U00002b1c' * int(percent // 10)
         embed.add_field(
             name=f"{choice.emoji} {choice.value}  ({count}票)",
             value=f"{graph}  {int(percent)}%",

@@ -4,7 +4,6 @@ from discord.ext.commands import (
     guild_only
 )
 import datetime
-from sqlalchemy import text as sql_text
 from lib.database.query import create_poll, get_poll_by_id
 from lib.embed import make_poll_embed, make_poll_reserve_embed, make_poll_result_embed, change_footer, make_poll_help_embed
 import discord
@@ -12,7 +11,7 @@ from lib.context import Context
 import re
 from emoji import UNICODE_EMOJI
 from typing import TYPE_CHECKING, Optional, List, Tuple, Any
-from lib.database.models import Poll, Vote
+from lib.database.models import Poll
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -280,6 +279,7 @@ class PollCog(Cog):
                 poll.ended_at = datetime.datetime.utcnow()
                 choices = {c.emoji: c for c in poll.choices}
                 adds = []
+                now = datetime.datetime.utcnow()
 
                 for reaction in message.reactions:
                     if str(reaction.emoji) not in choices.keys():
@@ -288,7 +288,7 @@ class PollCog(Cog):
                         if user.id == self.bot.user.id:
                             continue
                         choice_id = choices[str(reaction.emoji)].id
-                        adds.append((choice_id, user.id, datetime.datetime.utcnow()))
+                        adds.append((choice_id, user.id, now))
                 conn = await self.bot.db.engine.raw_connection()
                 adapter = getattr(conn.cursor(), "_adapt_connection", None)
                 asyncpg_conn = getattr(adapter, "_connection", None)

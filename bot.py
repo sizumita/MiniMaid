@@ -17,7 +17,7 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
-    async def on_command_error(self, context: Context, exception: Exception):
+    async def on_command_error(self, context: Context, exception: Exception) -> None:
         if isinstance(exception, commands.CommandNotFound):
             return
         if isinstance(exception, commands.BadArgument):
