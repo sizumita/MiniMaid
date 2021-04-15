@@ -1,9 +1,9 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from discord import Embed, Colour
 
 from lib.context import Context
-from lib.database.models import Poll, UserVoicePreference
+from lib.database.models import Poll, UserVoicePreference, GuildVoicePreference, VoiceDictionary
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -152,4 +152,51 @@ def user_voice_preference_embed(ctx: Context, preference: UserVoicePreference) -
         inline=False
     )
     embed.set_footer(text=f"{ctx.prefix}pref reset で設定をリセットできます。")
+    return embed
+
+
+def yesno(v: bool) -> str:
+    return "はい" if v else "いいえ"
+
+
+def guild_voice_preference_embed(ctx: Context, preference: GuildVoicePreference) -> Embed:
+    embed = Embed(
+        title=f"{ctx.guild.name}のボイス設定",
+        colour=Colour.blue()
+    )
+
+    embed.add_field(
+        name="名前を読み上げるか",
+        value=f"**{yesno(preference.read_name)}**\n\n`{ctx.prefix}gpref name`コマンドで変更できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="ニックネームを読み上げるか",
+        value=f"**{yesno(preference.read_nick)}**\n\n`{ctx.prefix}gpref nick`コマンドで変更できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="Botのメッセージを読み上げるか",
+        value=f"**{yesno(preference.read_bot)}**\n\n`{ctx.prefix}gpref bot`コマンドで変更できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="ユーザーがボイスチャットに入ったことを通知するか",
+        value=f"**{yesno(preference.read_join)}**\n\n`{ctx.prefix}gpref join`コマンドで変更できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="ユーザーがボイスチャットから退出したことを通知するか",
+        value=f"**{yesno(preference.read_leave)}**\n\n`{ctx.prefix}gpref leave`コマンドで変更できます。",
+        inline=False
+    )
+
+    return embed
+
+
+def voice_dictionaries_embed(ctx: Context, dictionaries: List[VoiceDictionary]) -> Embed:
+    embed = Embed(
+        title=f"{ctx.guild.name}の読み上げ用辞書一覧",
+        description="\n".join([f"{dic.before} : {dic.after}" for dic in dictionaries])[:2000]
+    )
     return embed

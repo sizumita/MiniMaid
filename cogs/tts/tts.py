@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 from collections import defaultdict
 import asyncio
 import json
@@ -12,8 +12,8 @@ from discord.ext.commands import (
 import discord
 
 from lib.context import Context
-from lib.database.query import select_user_setting, select_guild_setting
-from lib.database.models import UserVoicePreference, GuildVoicePreference
+from lib.database.query import select_user_setting, select_guild_setting, select_voice_dictionaries
+from lib.database.models import UserVoicePreference, GuildVoicePreference, VoiceDictionary
 from lib.checks import bot_connected_only, user_connected_only, voice_channel_only
 from lib.tts import TextToSpeechEngine
 
@@ -115,14 +115,20 @@ class TextToSpeechEventMixin(TextToSpeechBase):
                 result = await session.execute(select_guild_setting(guild_id))
                 pref = result.scalars().first()
                 if pref is not None:
-                    e = TextToSpeechEngine(self.bot.loop, pref)
+                    e = TextToSpeechEngine(self.bot.loop, pref, await self.get_dictionaries(guild_id))
                     self.engines[guild_id] = e
                     return e
                 new = GuildVoicePreference(guild_id=guild_id)
                 session.add(new)
-        e = TextToSpeechEngine(self.bot.loop, new)
+        e = TextToSpeechEngine(self.bot.loop, new, await self.get_dictionaries(guild_id))
         self.engines[guild_id] = e
         return e
+
+    async def get_dictionaries(self, guild_id: int) -> List[VoiceDictionary]:
+        async with self.bot.db.Session() as session:
+            async with session.begin():
+                result = await session.execute(select_voice_dictionaries(guild_id))
+                return result.scalars().all()
 
     async def get_user_preference(self, user_id: int) -> UserVoicePreference:
         if user_id in self.users.keys():
@@ -166,6 +172,21 @@ class TextToSpeechEventMixin(TextToSpeechBase):
     async def on_guild_preference_update(self, preference: GuildVoicePreference):
         if preference.guild_id in self.engines.keys():
             self.engines[preference.guild_id].update_guild_preference(preference)
+
+    @Cog.listener(name="on_voice_dictionary_add")
+    async def dictionary_add(self, guild: discord.Guild, dic: VoiceDictionary):
+        if guild.id in self.engines.keys():
+            self.engines[guild.id].update_dictionary("add", dic)
+
+    @Cog.listener(name="on_voice_dictionary_update")
+    async def dictionary_update(self, guild: discord.Guild, dic: VoiceDictionary):
+        if guild.id in self.engines.keys():
+            self.engines[guild.id].update_dictionary("update", dic)
+
+    @Cog.listener(name="on_voice_dictionary_remove")
+    async def dictionary_remove(self, guild: discord.Guild, dic: VoiceDictionary):
+        if guild.id in self.engines.keys():
+            self.engines[guild.id].update_dictionary("remove", dic)
 
 
 class TextToSpeechCog(TextToSpeechCommandMixin, TextToSpeechEventMixin):
