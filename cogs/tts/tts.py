@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 from collections import defaultdict
 import asyncio
 import json
+import re
 
 from discord.ext.commands import (
     Cog,
@@ -20,6 +21,9 @@ if TYPE_CHECKING:
     from bot import MiniMaid
 
 
+comment_compiled = re.compile(r"//.*[^\n]\n")
+
+
 class TextToSpeechBase(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.reading_guilds = {}
@@ -30,7 +34,9 @@ class TextToSpeechBase(Cog):
         self.engines = {}
         self.english_dict = {}
         with open("dic.json", "r") as f:
-            self.english_dict = json.load(f)
+            t = f.read()
+            print(re.sub(comment_compiled, "", t)[:100])
+            self.english_dict = json.loads(re.sub(comment_compiled, "", t))
 
 
 class TextToSpeechCommandMixin(TextToSpeechBase):
