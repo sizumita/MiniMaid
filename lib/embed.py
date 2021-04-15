@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from discord import Embed, Colour
 
 from lib.context import Context
-from lib.database.models import Poll
+from lib.database.models import Poll, UserVoicePreference
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -123,4 +123,33 @@ def make_poll_result_embed(bot: 'MiniMaid', ctx: Context, poll: Poll, choices: l
 
 def change_footer(embed: Embed, text: str) -> Embed:
     embed.set_footer(text=text)
+    return embed
+
+
+def user_voice_preference_embed(ctx: Context, preference: UserVoicePreference) -> Embed:
+    embed = Embed(
+        title=f"{ctx.author}さんのボイス設定",
+        colour=Colour.blue()
+    )
+    embed.add_field(
+        name="読み上げ速度",
+        value=f"**{preference.speed}**\n\n`{ctx.prefix}pref speed <0.5 以上 2.0 以下>`で設定できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="音量",
+        value=f"**{preference.volume}**\n\n`{ctx.prefix}pref volume <-20.0以上 0.0 以下>`で設定できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="トーン",
+        value=f"**{preference.tone}**\n\n`{ctx.prefix}pref tone <-20.0以上 20.0 以下>`で設定できます。",
+        inline=False
+    )
+    embed.add_field(
+        name="イントネーション",
+        value=f"**{preference.intone}**\n\n`{ctx.prefix}pref tone <0.0以上 4.0 以下>`で設定できます。",
+        inline=False
+    )
+    embed.set_footer(text=f"{ctx.prefix}pref reset で設定をリセットできます。")
     return embed

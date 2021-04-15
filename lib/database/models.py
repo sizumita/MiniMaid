@@ -91,3 +91,15 @@ class GuildVoicePreference(Base):
     read_leave = Column(Boolean, default=False)
     read_bot = Column(Boolean, default=False)
     read_nick = Column(Boolean, default=True)
+
+
+class VoiceDictionary(Base):
+    __tablename__ = "voice_dictionaries"
+    id = Column(Integer, primary_key=True)
+    guild_id = Column(BigInteger, unique=True)
+
+    before = Column(String, unique=True)
+    after = Column(String)
+
+    owner_id = Column(BigInteger)
+    created_at = Column(DateTime, default=datetime.utcnow)

@@ -80,7 +80,7 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
 
     @command()
     async def skip(self, ctx: Context) -> None:
-        self.bot.dispatch("skip_tts", ctx.message)
+        self.bot.dispatch("skip_tts", ctx)
 
 
 class TextToSpeechEventMixin(TextToSpeechBase):
@@ -96,15 +96,16 @@ class TextToSpeechEventMixin(TextToSpeechBase):
             if voice_client is None:
                 return
 
-            def check(msg):
-                return msg.channel.id == message.channel.id and msg.author.id == message.author.id
+            def check(ctx):
+                return ctx.channel.id == message.channel.id and ctx.author.id == message.author.id
 
             event = asyncio.Event(loop=self.bot.loop)
             voice_client.play(source, after=lambda err: event.set())
             for coro in asyncio.as_completed([event.wait(), self.bot.wait_for("skip_tts", check=check, timeout=None)]):
                 result = await coro
-                if isinstance(result, discord.Message):
+                if isinstance(result, Context):
                     voice_client.stop()
+                    await result.success("skipしました。")
 
     async def get_engine(self, guild_id: int) -> TextToSpeechEngine:
         if guild_id in self.engines.keys():
@@ -156,6 +157,15 @@ class TextToSpeechEventMixin(TextToSpeechBase):
             return
 
         await self.queue_text_to_speech(message)
+
+    @Cog.listener(name="on_user_preference_update")
+    async def on_user_preference_update(self, preference: UserVoicePreference):
+        self.users[preference.user_id] = preference
+
+    @Cog.listener(name="on_guild_preference_update")
+    async def on_guild_preference_update(self, preference: GuildVoicePreference):
+        if preference.guild_id in self.engines.keys():
+            self.engines[preference.guild_id].update_guild_preference(preference)
 
 
 class TextToSpeechCog(TextToSpeechCommandMixin, TextToSpeechEventMixin):
