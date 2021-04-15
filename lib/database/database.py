@@ -14,7 +14,7 @@ class Database:
         self.loop = loop
         self.engine = create_async_engine(
             environ["DATABASE_URL"],
-            echo=True,
+            # echo=True,
         )
         self.serialized_engine = self.engine.execution_options(isolation_level="SERIALIZABLE")
         self.Session: Optional[sessionmaker] = None

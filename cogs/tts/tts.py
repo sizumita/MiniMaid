@@ -1,4 +1,6 @@
 from typing import TYPE_CHECKING
+from collections import defaultdict
+import asyncio
 
 from discord.ext.commands import (
     Cog,
@@ -8,7 +10,10 @@ from discord.ext.commands import (
 import discord
 
 from lib.context import Context
+from lib.database.query import select_user_setting, select_guild_setting
+from lib.database.models import UserVoicePreference, GuildVoicePreference
 from lib.checks import bot_connected_only, user_connected_only, voice_channel_only
+from lib.tts import TextToSpeechEngine
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -18,6 +23,10 @@ class TextToSpeechBase(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.reading_guilds = {}
         self.bot = bot
+        self.locks = defaultdict(asyncio.Lock)
+        self.least_users = defaultdict(None)
+        self.users = {}
+        self.engines = {}
 
 
 class TextToSpeechCommandMixin(TextToSpeechBase):
@@ -58,16 +67,73 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
         await ctx.success("移動しました。")
 
 
-class TextToSpeechCog(TextToSpeechCommandMixin):
-    def __init__(self, bot: 'MiniMaid') -> None:
-        super(TextToSpeechCog, self).__init__(bot)
+class TextToSpeechEventMixin(TextToSpeechBase):
+    async def queue_text_to_speech(self, message: discord.Message) -> None:
+        user_preference = await self.get_user_preference(message.author.id)
+        engine = await self.get_engine(message.guild.id)
+        source = await engine.generate_source(message, user_preference)
+        voice_client: discord.VoiceClient = message.guild.voice_client
+
+        async with self.locks[message.guild.id]:
+            event = asyncio.Event(loop=self.bot.loop)
+            voice_client.play(source, after=lambda err: event.set())
+            await event.wait()
+
+    async def get_engine(self, guild_id: int) -> TextToSpeechEngine:
+        if guild_id in self.engines.keys():
+            return self.engines[guild_id]
+        async with self.bot.db.Session() as session:
+            async with session.begin():
+                result = await session.execute(select_guild_setting(guild_id))
+                pref = result.scalars().first()
+                if pref is not None:
+                    e = TextToSpeechEngine(self.bot.loop, pref)
+                    self.engines[guild_id] = e
+                    return e
+                new = GuildVoicePreference(guild_id=guild_id)
+                session.add(new)
+        e = TextToSpeechEngine(self.bot.loop, new)
+        self.engines[guild_id] = e
+        return e
+
+    async def get_user_preference(self, user_id: int) -> UserVoicePreference:
+        if user_id in self.users.keys():
+            return self.users[user_id]
+
+        async with self.bot.db.Session() as session:
+            async with session.begin():
+                result = await session.execute(select_user_setting(user_id))
+                pref = result.scalars().first()
+                if pref is not None:
+                    self.users[user_id] = pref
+                    return pref
+                new = UserVoicePreference(user_id=user_id)
+                session.add(new)
+        self.users[user_id] = new
+        return new
 
     @Cog.listener(name="on_message")
     async def read_text(self, message: discord.Message) -> None:
+        if message.content is None:
+            return
         if message.guild is None:
             return
-        if message.guild.id in self.reading_guilds.keys():
-            pass
+        if message.guild.id not in self.reading_guilds.keys():
+            return
+        context = await self.bot.get_context(message, cls=Context)
+        if context.command is not None:
+            return
+
+        text_channel_id, voice_channel_id = self.reading_guilds[message.guild.id]
+        if message.channel.id != text_channel_id:
+            return
+
+        await self.queue_text_to_speech(message)
+
+
+class TextToSpeechCog(TextToSpeechCommandMixin, TextToSpeechEventMixin):
+    def __init__(self, bot: 'MiniMaid') -> None:
+        super(TextToSpeechCog, self).__init__(bot)
 
 
 def setup(bot: 'MiniMaid') -> None:
