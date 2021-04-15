@@ -27,7 +27,7 @@ class MiniMaid(commands.Bot):
             await context.error("引数の解析に失敗しました。", "引数を確認して再度コマンドを実行してください。")
 
         elif isinstance(exception, MiniMaidException):
-            await exception.send(context)
+            await context.error(exception.message())
 
         elif isinstance(exception, commands.NoPrivateMessage):
             await context.error("このコマンドはサーバー専用です。")
