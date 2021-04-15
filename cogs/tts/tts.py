@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 from collections import defaultdict
 import asyncio
+import json
 
 from discord.ext.commands import (
     Cog,
@@ -27,6 +28,9 @@ class TextToSpeechBase(Cog):
         self.least_users = defaultdict(None)
         self.users = {}
         self.engines = {}
+        self.english_dict = {}
+        with open("dic.json", "r") as f:
+            self.english_dict = json.load(f)
 
 
 class TextToSpeechCommandMixin(TextToSpeechBase):
@@ -71,10 +75,10 @@ class TextToSpeechEventMixin(TextToSpeechBase):
     async def queue_text_to_speech(self, message: discord.Message) -> None:
         user_preference = await self.get_user_preference(message.author.id)
         engine = await self.get_engine(message.guild.id)
-        source = await engine.generate_source(message, user_preference)
-        voice_client: discord.VoiceClient = message.guild.voice_client
         if message.author.bot and not engine.guild_preference.read_bot:
             return
+        source = await engine.generate_source(message, user_preference, self.english_dict)
+        voice_client: discord.VoiceClient = message.guild.voice_client
 
         async with self.locks[message.guild.id]:
             event = asyncio.Event(loop=self.bot.loop)
