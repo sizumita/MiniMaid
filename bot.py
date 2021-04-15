@@ -1,4 +1,6 @@
+import sys
 from os import environ
+from typing import Any
 
 from discord.ext import commands
 import discord
@@ -18,6 +20,16 @@ class MiniMaid(commands.Bot):
             help_command=None
         )
         self.db = Database()
+
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
+        _, err, _ = sys.exc_info()
+        if isinstance(err, MiniMaidException) and event_method == "on_message":
+            embed = discord.Embed(title=f"\U000026a0 {err.message()}", color=0xffc107)
+
+            message = args[0]
+            await message.channel.send(embed=embed)
+
+        await super(MiniMaid, self).on_error(event_method, *args, **kwargs)
 
     async def on_command_error(self, context: Context, exception: Exception) -> None:
         if isinstance(exception, commands.CommandNotFound):

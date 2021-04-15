@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from discord.ext.commands import (
     Cog,
@@ -14,16 +14,19 @@ if TYPE_CHECKING:
     from bot import MiniMaid
 
 
-class TextToSpeechCog(Cog):
+class TextToSpeechBase(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
+        self.reading_guilds = {}
         self.bot = bot
-        self.reading_guilds = {}  # guild_id: (text_channel_id, voice_channel_id)
 
+
+class TextToSpeechCommandMixin(TextToSpeechBase):
     @command()
-    @guild_only()
-    @user_connected_only()
     @voice_channel_only()
+    @user_connected_only()
+    @guild_only()
     async def join(self, ctx: Context) -> None:
+        command()
         if ctx.guild.id in self.reading_guilds.keys():
             await ctx.error("すでに接続しています", f"`{ctx.prefix}move`コマンドを使用してください。")
             return
@@ -35,23 +38,36 @@ class TextToSpeechCog(Cog):
         await ctx.success("接続しました。")
 
     @command()
-    @guild_only()
     @bot_connected_only()
+    @guild_only()
     async def leave(self, ctx: Context) -> None:
         # TODO: queueを消す
         await ctx.guild.voice_client.disconnect(force=True)
+        del self.reading_guilds[ctx.guild.id]
         await ctx.success("切断しました。")
 
     @command()
-    @guild_only()
-    @bot_connected_only()
-    @user_connected_only()
     @voice_channel_only()
+    @user_connected_only()
+    @bot_connected_only()
+    @guild_only()
     async def move(self, ctx: Context) -> None:
         # TODO queueを消す
         await ctx.voice_client.move_to(ctx.author.voice.channel)
         self.reading_guilds[ctx.guild.id] = (ctx.channel.id, ctx.author.voice.channel.id)
         await ctx.success("移動しました。")
+
+
+class TextToSpeechCog(TextToSpeechCommandMixin):
+    def __init__(self, bot: 'MiniMaid') -> None:
+        super(TextToSpeechCog, self).__init__(bot)
+
+    @Cog.listener(name="on_message")
+    async def read_text(self, message: discord.Message) -> None:
+        if message.guild is None:
+            return
+        if message.guild.id in self.reading_guilds.keys():
+            pass
 
 
 def setup(bot: 'MiniMaid') -> None:
