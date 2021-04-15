@@ -9,7 +9,8 @@ extensions = [
     "cogs.party",
     "cogs.team",
     "cogs.poll",
-    "cogs.poll_manager"
+    "cogs.poll_manager",
+    "cogs.tts.tts"
 ]
 
 for extension in extensions:

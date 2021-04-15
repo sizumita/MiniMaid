@@ -5,6 +5,7 @@ import discord
 
 from lib.database.database import Database
 from lib.context import Context
+from lib.errors import MiniMaidException
 
 
 class MiniMaid(commands.Bot):
@@ -20,11 +21,19 @@ class MiniMaid(commands.Bot):
 
     async def on_command_error(self, context: Context, exception: Exception) -> None:
         if isinstance(exception, commands.CommandNotFound):
-            return
-        if isinstance(exception, commands.BadArgument):
+            pass
+
+        elif isinstance(exception, commands.BadArgument):
             await context.error("引数の解析に失敗しました。", "引数を確認して再度コマンドを実行してください。")
-            return
-        await super(MiniMaid, self).on_command_error(context, exception)
+
+        elif isinstance(exception, MiniMaidException):
+            await exception.send(context)
+
+        elif isinstance(exception, commands.NoPrivateMessage):
+            await context.error("このコマンドはサーバー専用です。")
+
+        else:
+            await super(MiniMaid, self).on_command_error(context, exception)
 
     async def start(self, *args: list, **kwargs: dict) -> None:
         await self.db.start()
