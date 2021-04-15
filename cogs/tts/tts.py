@@ -29,13 +29,11 @@ class TextToSpeechBase(Cog):
         self.reading_guilds = {}
         self.bot = bot
         self.locks = defaultdict(asyncio.Lock)
-        self.least_users = defaultdict(None)
         self.users = {}
         self.engines = {}
         self.english_dict = {}
         with open("dic.json", "r") as f:
             t = f.read()
-            print(re.sub(comment_compiled, "", t)[:100])
             self.english_dict = json.loads(re.sub(comment_compiled, "", t))
 
 
@@ -60,8 +58,10 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
     @bot_connected_only()
     @guild_only()
     async def leave(self, ctx: Context) -> None:
-        # TODO: queueを消す
         await ctx.guild.voice_client.disconnect(force=True)
+        async with self.locks[ctx.guild.id]:
+            del self.engines[ctx.guild.id]
+            del self.reading_guilds[ctx.guild.id]
         del self.reading_guilds[ctx.guild.id]
         await ctx.success("切断しました。")
 
@@ -71,10 +71,16 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
     @bot_connected_only()
     @guild_only()
     async def move(self, ctx: Context) -> None:
-        # TODO queueを消す
-        await ctx.voice_client.move_to(ctx.author.voice.channel)
+        await ctx.voice_client.disconnect()
+        async with self.locks[ctx.guild.id]:
+            del self.reading_guilds[ctx.guild.id]
+        await ctx.author.voice.channel.connect(timeout=30.0)
         self.reading_guilds[ctx.guild.id] = (ctx.channel.id, ctx.author.voice.channel.id)
         await ctx.success("移動しました。")
+
+    @command()
+    async def skip(self, ctx: Context) -> None:
+        self.bot.dispatch("skip_tts", ctx.message)
 
 
 class TextToSpeechEventMixin(TextToSpeechBase):
@@ -84,12 +90,21 @@ class TextToSpeechEventMixin(TextToSpeechBase):
         if message.author.bot and not engine.guild_preference.read_bot:
             return
         source = await engine.generate_source(message, user_preference, self.english_dict)
-        voice_client: discord.VoiceClient = message.guild.voice_client
 
         async with self.locks[message.guild.id]:
+            voice_client: discord.VoiceClient = message.guild.voice_client
+            if voice_client is None:
+                return
+
+            def check(msg):
+                return msg.channel.id == message.channel.id and msg.author.id == message.author.id
+
             event = asyncio.Event(loop=self.bot.loop)
             voice_client.play(source, after=lambda err: event.set())
-            await event.wait()
+            for coro in asyncio.as_completed([event.wait(), self.bot.wait_for("skip_tts", check=check, timeout=None)]):
+                result = await coro
+                if isinstance(result, discord.Message):
+                    voice_client.stop()
 
     async def get_engine(self, guild_id: int) -> TextToSpeechEngine:
         if guild_id in self.engines.keys():
