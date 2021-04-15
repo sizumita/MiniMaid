@@ -76,9 +76,9 @@ class UserVoicePreference(Base):
     user_id = Column(BigInteger, unique=True)
 
     speed = Column(Float, default=1.0)  # 速さ 0.5 < s < 2.0
-    tone = Column(Integer, default=0)  # トーン -20 < t < 20
+    tone = Column(Float, default=0)  # トーン -20.0 < t < 20.0
     intone = Column(Float, default=1.0)  # イントネーション 0.0 < i < 4.0
-    volume = Column(Float, default=-6.0)  # 大きさ -20 < v < 0
+    volume = Column(Float, default=-6.0)  # 大きさ -20.0 < v < 0.0
 
 
 class GuildVoicePreference(Base):

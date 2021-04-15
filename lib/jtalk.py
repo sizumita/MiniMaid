@@ -65,39 +65,21 @@ class JTalk:
         self.jtalk.openjtalk_getGvWeightForSpectrum.argtypes = [c_void_p]
         self.jtalk.openjtalk_getGvWeightForSpectrum.restype = c_double
         self.jtalk.openjtalk_setGvWeightForLogF0.argtypes = [c_void_p, c_double]
-        self.jtalk.openjtalk_getGvWeightForLogF0.argtypes = [c_void_p]
-        self.jtalk.openjtalk_getGvWeightForLogF0.restype = c_double
+
         self.jtalk.openjtalk_setVolume.argtypes = [c_void_p, c_double]
-        self.jtalk.openjtalk_getVolume.argtypes = [c_void_p]
-        self.jtalk.openjtalk_getVolume.restype = c_double
+
         self.jtalk.openjtalk_setDic.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getDic.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getDic.restype = c_char_p
+
         self.jtalk.openjtalk_setVoiceDir.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoiceDir.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoiceDir.restype = c_char_p
 
         self.jtalk.openjtalk_setVoice.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoice.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoice.restype = c_char_p
 
         self.jtalk.openjtalk_setVoicePath.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoicePath.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoicePath.restype = c_char_p
 
         self.jtalk.openjtalk_setVoiceName.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoiceName.argtypes = [c_void_p, c_char_p]
-        self.jtalk.openjtalk_getVoiceName.restype = c_char_p
 
         self.jtalk.openjtalk_generatePCM.argtypes = [c_void_p, c_char_p, c_void_p, c_void_p]
         self.jtalk.openjtalk_generatePCM.restype = c_bool
-
-        self.jtalk.openjtalk_waitUntilDone.argtypes = [c_void_p]
-
-        self.jtalk.openjtalk_wait.argtypes = [c_void_p, c_int]
-        self.jtalk.openjtalk_speakToFile.argtypes = [c_void_p, c_char_p, c_char_p]
-        self.jtalk.openjtalk_setVerbose.argtypes = [c_bool]
-        self.jtalk.openjtalk_test.argtypes = [c_void_p, c_void_p]
 
     def _generate_voice_list(self) -> None:
         if len(self._voices):
@@ -123,7 +105,6 @@ class JTalk:
         data = c_void_p()
         length = c_size_t()
         r = self.jtalk.openjtalk_generatePCM(self.h, text.encode('utf-8'), byref(data), byref(length))
-        print(length)
         if not r:
             self.jtalk.openjtalk_clearData(data, length)
             return None
@@ -131,3 +112,19 @@ class JTalk:
         pcm = cast(data, POINTER(c_short))[:length.value]
         self.jtalk.openjtalk_clearData(data, length)
         return pcm
+
+    def set_volume(self, value: float):
+        self._check_openjtalk_object()
+        self.jtalk.openjtalk_setVolume(self.h, value)
+
+    def set_tone(self, value: float):
+        self._check_openjtalk_object()
+        self.jtalk.openjtalk_setAdditionalHalfTone(self.h, value)
+
+    def set_speed(self, value: float):
+        self._check_openjtalk_object()
+        self.jtalk.openjtalk_setSpeed(self.h, value)
+
+    def set_intone(self, value: float):
+        self._check_openjtalk_object()
+        self.jtalk.openjtalk_setGvWeightForLogF0(self.h, value)

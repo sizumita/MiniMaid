@@ -73,6 +73,8 @@ class TextToSpeechEventMixin(TextToSpeechBase):
         engine = await self.get_engine(message.guild.id)
         source = await engine.generate_source(message, user_preference)
         voice_client: discord.VoiceClient = message.guild.voice_client
+        if message.author.bot and not engine.guild_preference.read_bot:
+            return
 
         async with self.locks[message.guild.id]:
             event = asyncio.Event(loop=self.bot.loop)
