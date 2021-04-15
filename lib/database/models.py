@@ -9,7 +9,8 @@ from sqlalchemy import (
     ARRAY,
     DateTime,
     ForeignKey,
-    Boolean
+    Boolean,
+    Float
 )
 
 from lib.database.base import Base
@@ -67,3 +68,26 @@ class Vote(Base):
     user_id = Column(BigInteger)
 
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UserVoicePreference(Base):
+    __tablename__ = "user_voice_preference"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(BigInteger, unique=True)
+
+    speed = Column(Float, default=1.0)  # 速さ 0.5 < s < 2.0
+    tone = Column(Integer, default=0)  # トーン -20 < t < 20
+    intone = Column(Float, default=1.0)  # イントネーション 0.0 < i < 4.0
+    volume = Column(Float, default=-6.0)  # 大きさ -20 < v < 0
+
+
+class GuildVoicePreference(Base):
+    __tablename__ = "guild_voice_preference"
+    id = Column(Integer, primary_key=True)
+    guild_id = Column(BigInteger, unique=True)
+
+    read_name = Column(Boolean, default=True)
+    read_join = Column(Boolean, default=False)
+    read_leave = Column(Boolean, default=False)
+    read_bot = Column(Boolean, default=False)
+    read_nick = Column(Boolean, default=True)
