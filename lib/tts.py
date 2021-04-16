@@ -66,20 +66,22 @@ class TextToSpeechEngine:
                               user_preference: UserVoicePreference,
                               english_dict: dict) -> discord.PCMAudio:
         read_name = all((
-            True if self.least_user == message.author.id else False,
+            True if self.least_user != message.author.id else False,
             self.guild_preference.read_name
         ))
         text = message.clean_content
         if read_name:
             if self.guild_preference.read_nick:
-                text = message.author.display_name + text
+                text = message.author.display_name + "、" + text
             else:
-                text = message.author.name + text
+                text = message.author.name + "、" + text
         text = self.escape_dictionary(text)
         sentences = english_compiled.findall(text)
         for sentence in sentences:
             if sentence.upper() in english_dict.keys():
                 text = text.replace(sentence, english_dict[sentence.upper()])
+        if len(text) > self.guild_preference.limit:
+            text = text[:self.guild_preference.limit] + "、以下略"
 
         async with self.jtalk_lock:
             # async with self.voice_event_lock:

@@ -190,6 +190,10 @@ def guild_voice_preference_embed(ctx: Context, preference: GuildVoicePreference)
         value=f"**{yesno(preference.read_leave)}**\n\n`{ctx.prefix}gpref leave`コマンドで変更できます。",
         inline=False
     )
+    embed.add_field(
+        name="読み上げ文字数の制限",
+        value=f"**{preference.limit}文字**\n\n`{ctx.prefix}gpref limit <文字数>`コマンドで変更できます。"
+    )
 
     return embed
 

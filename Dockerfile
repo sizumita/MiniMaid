@@ -37,5 +37,8 @@ COPY main.py /bot
 COPY cogs /bot/cogs
 COPY lib /bot/lib
 COPY dic.json /bot
+COPY alembic.ini /bot
+COPY alembic /bot/alembic
+COPY run.sh /bot
 
-CMD ["python", "main.py"]
+CMD ["bash", "run.sh"]

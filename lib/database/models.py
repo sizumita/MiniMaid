@@ -91,6 +91,7 @@ class GuildVoicePreference(Base):
     read_leave = Column(Boolean, default=False)
     read_bot = Column(Boolean, default=False)
     read_nick = Column(Boolean, default=True)
+    limit = Column(Integer, default=100)
 
 
 class VoiceDictionary(Base):

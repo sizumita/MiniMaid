@@ -112,6 +112,24 @@ class UserPreferenceMixin(TTSPreferenceBase):
 
 
 class GuildPreferenceMixin(TTSPreferenceBase):
+    async def update_guild_text_limit(self, ctx: Context, value: int) -> None:
+        async with self.bot.db.Session() as session:
+            result = await session.execute(select_guild_setting(ctx.guild.id))
+            pref = result.scalars().first()
+            if pref is None:
+                new = GuildVoicePreference(guild_id=ctx.guild.id, limit=value)
+                session.add(new)
+                await session.commit()
+                self.bot.dispatch("guild_preference_update", new)
+                await ctx.success("設定しました。", f"`{ctx.prefix}gpref`コマンドで確認できます。")
+                return
+            pref.limit = value
+            await session.commit()
+
+        await session.commit()
+        self.bot.dispatch("guild_preference_update", pref)
+        await ctx.success("設定しました。", f"`{ctx.prefix}gpref`コマンドで確認できます。")
+
     async def update_guild_preference(self, ctx: Context, change_field: str) -> None:
         async with self.bot.db.Session() as session:
             result = await session.execute(select_guild_setting(ctx.guild.id))
@@ -181,6 +199,13 @@ class GuildPreferenceMixin(TTSPreferenceBase):
     async def speak_name(self, ctx: Context) -> None:
         await self.update_guild_preference(ctx, "name")
 
+    @guild_preference.command(name="limit")
+    async def speak_limit(self, ctx: Context, value: int) -> None:
+        if not (0 < value <= 500):
+            await ctx.error("文字数の制限は1以上500以下にしてください。")
+            return
+        await self.update_guild_text_limit(ctx, value)
+
 
 class VoiceDictionaryMixin(TTSPreferenceBase):
     @group(name="dictionary", aliases=["dic", "dict"], invoke_without_command=True)
@@ -195,6 +220,10 @@ class VoiceDictionaryMixin(TTSPreferenceBase):
     @voice_dictionary.command(name="add", alases=["set", "new"])
     @cooldown(5, 60.0, type=BucketType.guild)
     async def add_voice_dictionary(self, ctx: Context, before: str, after: str) -> None:
+        if len(after) > 500:
+            await ctx.error("変換先の文字は500文字以内にしてください。")
+            return
+
         async with self.bot.db.Session() as session:
             result = await session.execute(select_voice_dictionary(ctx.guild.id, before))
             dic = result.scalars().first()
