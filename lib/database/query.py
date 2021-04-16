@@ -4,7 +4,14 @@ from sqlalchemy.future import select
 from sqlalchemy.sql import Select
 from sqlalchemy.orm import selectinload
 
-from lib.database.models import Party, Poll, Choice
+from lib.database.models import (
+    Party,
+    Poll,
+    Choice,
+    UserVoicePreference,
+    GuildVoicePreference,
+    VoiceDictionary
+)
 
 
 def select_party(guild_id: int, name: str) -> Select:
@@ -38,3 +45,19 @@ def create_poll(
 
 def get_poll_by_id(poll_id: int) -> Select:
     return select(Poll).where(Poll.id == poll_id).options(selectinload(Poll.choices).selectinload(Choice.votes))
+
+
+def select_user_setting(user_id: int) -> Select:
+    return select(UserVoicePreference).where(UserVoicePreference.user_id == user_id)
+
+
+def select_guild_setting(guild_id: int) -> Select:
+    return select(GuildVoicePreference).where(GuildVoicePreference.guild_id == guild_id)
+
+
+def select_voice_dictionaries(guild_id: int) -> Select:
+    return select(VoiceDictionary).where(VoiceDictionary.guild_id == guild_id)
+
+
+def select_voice_dictionary(guild_id: int, before: str) -> Select:
+    return select(VoiceDictionary).where(VoiceDictionary.guild_id == guild_id).where(VoiceDictionary.before == before)

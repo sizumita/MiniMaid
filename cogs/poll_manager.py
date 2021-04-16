@@ -52,7 +52,10 @@ class PollManagerCog(Cog):
             return
         if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):
             return
-        message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        try:
+            message: discord.Message = await self.bot.get_channel(payload.channel_id).fetch_message(payload.message_id)
+        except discord.NotFound:
+            return
         if message.author.id != self.bot.user.id:
             return
         r = await self.vote_add_action(payload)

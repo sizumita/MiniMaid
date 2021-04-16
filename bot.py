@@ -1,10 +1,13 @@
+import sys
 from os import environ
+from typing import Any
 
 from discord.ext import commands
 import discord
 
 from lib.database.database import Database
 from lib.context import Context
+from lib.errors import MiniMaidException
 
 
 class MiniMaid(commands.Bot):
@@ -18,13 +21,31 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
+        _, err, _ = sys.exc_info()
+        if isinstance(err, MiniMaidException) and event_method == "on_message":
+            embed = discord.Embed(title=f"\U000026a0 {err.message()}", color=0xffc107)
+
+            message = args[0]
+            await message.channel.send(embed=embed)
+
+        await super(MiniMaid, self).on_error(event_method, *args, **kwargs)
+
     async def on_command_error(self, context: Context, exception: Exception) -> None:
         if isinstance(exception, commands.CommandNotFound):
-            return
-        if isinstance(exception, commands.BadArgument):
+            pass
+
+        elif isinstance(exception, commands.BadArgument):
             await context.error("引数の解析に失敗しました。", "引数を確認して再度コマンドを実行してください。")
-            return
-        await super(MiniMaid, self).on_command_error(context, exception)
+
+        elif isinstance(exception, MiniMaidException):
+            await context.error(exception.message())
+
+        elif isinstance(exception, commands.NoPrivateMessage):
+            await context.error("このコマンドはサーバー専用です。")
+
+        else:
+            await super(MiniMaid, self).on_command_error(context, exception)
 
     async def start(self, *args: list, **kwargs: dict) -> None:
         await self.db.start()

@@ -8,11 +8,14 @@
 チェックマークがあるものは完了しています。
 
 - [ ] ヘルプコマンド
-- [ ] チーム分け
+- [x] チーム分け
 - [ ] ダイス
     - [ ] nCr
-- [ ] VoiceChatでの読み上げ
-    - [ ] OpenJTalk speech
+- [x] VoiceChatでの読み上げ
+    - [x] OpenJTalk speech
+    - [x] 入退室コマンド
+    - [x] 読み上げのスキップ
+    - [x] 各種設定の変更
 - [x] 投票システム
 - [x] パーティー
     - [x] パーティの作成
@@ -52,14 +55,25 @@
 
 ### using Python
 
+- pull https://github.com/sizumita/jtalkdll.git
+- run 
+  ```bash
+  cd jtalkdll
+  bash build
+  ```
+- run `rm rf -d jtalkdll` if you want
 - pull this repo
 - install Python 3.8 or later
 - run `python -m venv venv`
 - run `source ./venv/bin/activate`
 - run `pip install -r requirements.txt`
-- run `source .env && python main.py`
+- run `source .env`
+- run `alembic upgrade head`
+- run `python main.py`
 
 # Heroku support
+
+## warning: the least version is not available
 
 Click the button below to deploy to Heroku.
 
