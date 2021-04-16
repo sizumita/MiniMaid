@@ -25,6 +25,7 @@ class TextToSpeechEngine:
         self.least_user = None
         self.jtalk = JTalk()
         self.jtalk_lock = asyncio.Lock()
+        self.voice_event_lock = asyncio.Lock()
         self.executor = ThreadPoolExecutor()
         self.dictionaries = {d.before: d.after for d in dictionaries}
 
@@ -49,6 +50,15 @@ class TextToSpeechEngine:
         text = text.format(**self.dictionaries)
         return text
 
+    async def generate_default_source(self, text):
+        async with self.voice_event_lock:
+            self.jtalk.set_speed(1.0)
+            self.jtalk.set_tone(0)
+            self.jtalk.set_intone(1.0)
+            self.jtalk.set_volume(-3.0)
+            r = await self.loop.run_in_executor(self.executor, partial(self.get_source, text))
+            return discord.PCMAudio(r)
+
     async def generate_source(self,
                               message: discord.Message,
                               user_preference: UserVoicePreference,
@@ -60,7 +70,7 @@ class TextToSpeechEngine:
         text = message.clean_content
         if read_name:
             if self.guild_preference.read_nick:
-                text = message.author.nick + text
+                text = message.author.display_name + text
             else:
                 text = message.author.name + text
         text = self.escape_dictionary(text)
@@ -70,6 +80,7 @@ class TextToSpeechEngine:
                 text = text.replace(sentence, english_dict[sentence.upper()])
 
         async with self.jtalk_lock:
+            # async with self.voice_event_lock:
             self.jtalk.set_speed(user_preference.speed)
             self.jtalk.set_tone(user_preference.tone)
             self.jtalk.set_intone(user_preference.intone)
