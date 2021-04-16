@@ -67,7 +67,9 @@
 - run `python -m venv venv`
 - run `source ./venv/bin/activate`
 - run `pip install -r requirements.txt`
-- run `source .env && python main.py`
+- run `source .env`
+- run `alembic upgrade head`
+- run `python main.py`
 
 # Heroku support
 

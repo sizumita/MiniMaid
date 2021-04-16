@@ -65,7 +65,6 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
         await ctx.guild.voice_client.disconnect(force=True)
         async with self.locks[ctx.guild.id]:
             del self.engines[ctx.guild.id]
-        del self.reading_guilds[ctx.guild.id]
         await ctx.success("切断しました。")
 
     @command()
