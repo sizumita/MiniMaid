@@ -34,7 +34,7 @@ def test_parse_args_5():
     cog = PollCog(FakeBot())
     assert cog.parse_args("a", "<:test_emoji:1>", "<:test_emoji:1>") \
            == \
-           (True, "a", [(FakeEmoji(1), FakeEmoji(1)), (FakeEmoji(1), FakeEmoji(1))])
+           (False, "a", [(FakeEmoji(1), FakeEmoji(1)), (FakeEmoji(1), FakeEmoji(1))])
 
 
 def test_is_emoji_1():
