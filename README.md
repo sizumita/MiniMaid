@@ -73,6 +73,8 @@
 
 # Heroku support
 
+## warning: the least version is not available
+
 Click the button below to deploy to Heroku.
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
