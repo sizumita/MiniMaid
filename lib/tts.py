@@ -59,6 +59,7 @@ class TextToSpeechEngine:
             self.jtalk.set_intone(1.0)
             self.jtalk.set_volume(-3.0)
             r = await self.loop.run_in_executor(self.executor, partial(self.get_source, text))
+            self.least_user = None
             return discord.PCMAudio(r)
 
     async def generate_source(self,
@@ -90,4 +91,5 @@ class TextToSpeechEngine:
             self.jtalk.set_intone(user_preference.intone)
             self.jtalk.set_volume(user_preference.volume)
             r = await self.loop.run_in_executor(self.executor, partial(self.get_source, text))
+            self.least_user = message.author.id
             return discord.PCMAudio(r)
