@@ -8,7 +8,7 @@ from lib.errors import BotNotConnected, UserNotConnected, NoStageChannel
 
 
 def bot_connected_only() -> Any:
-    def predicate(ctx: Context):
+    def predicate(ctx: Context) -> bool:
         if ctx.voice_client is None:
             raise BotNotConnected()
         return True
@@ -17,7 +17,7 @@ def bot_connected_only() -> Any:
 
 
 def user_connected_only() -> Any:
-    def predicate(ctx: Context):
+    def predicate(ctx: Context) -> bool:
         if ctx.author.voice is None or ctx.author.voice.channel is None:
             raise UserNotConnected()
         return True
@@ -26,7 +26,7 @@ def user_connected_only() -> Any:
 
 
 def voice_channel_only() -> Any:
-    def predicate(ctx: Context):
+    def predicate(ctx: Context) -> bool:
         if isinstance(ctx.author.voice.channel, discord.StageChannel):
             raise NoStageChannel()
         return True

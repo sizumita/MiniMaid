@@ -21,7 +21,7 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
-    async def on_error(self, event_method: str, *args: Any, **kwargs: Any):
+    async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
         _, err, _ = sys.exc_info()
         if isinstance(err, MiniMaidException) and event_method == "on_message":
             embed = discord.Embed(title=f"\U000026a0 {err.message()}", color=0xffc107)

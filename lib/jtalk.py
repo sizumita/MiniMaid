@@ -1,4 +1,17 @@
-from ctypes import *
+from ctypes import (
+    Structure,
+    c_void_p,
+    c_char_p,
+    POINTER,
+    cdll,
+    cast,
+    c_int,
+    c_double,
+    c_bool,
+    c_size_t,
+    byref,
+    c_short
+)
 import platform
 from typing import Optional
 
@@ -11,14 +24,14 @@ class JTalk:
     MAX_PATH = 260
 
     def __init__(self,
-                 voice_path: Optional[str] = None,
-                 voice_dir_path: Optional[str] = None,
-                 dic_path: Optional[str] = None) -> None:
-        voice_path = voice_path.encode('utf-8') if voice_path is not None else None
-        voice_dir_path = voice_dir_path.encode('utf-8') if voice_dir_path is not None else None
-        dic_path = dic_path.encode('utf-8') if dic_path is not None else None
+                 voice_path_: Optional[str] = None,
+                 voice_dir_path_: Optional[str] = None,
+                 dic_path_: Optional[str] = None) -> None:
+        voice_path = voice_path_.encode('utf-8') if voice_path_ is not None else None
+        voice_dir_path = voice_dir_path_.encode('utf-8') if voice_dir_path_ is not None else None
+        dic_path = dic_path_.encode('utf-8') if dic_path_ is not None else None
 
-        self._voices = []
+        self._voices: list = []
         self._three = platform.python_version_tuple()[0] == '3'
 
         if platform.system() == 'Windows':
@@ -113,18 +126,18 @@ class JTalk:
         self.jtalk.openjtalk_clearData(data, length)
         return pcm
 
-    def set_volume(self, value: float):
+    def set_volume(self, value: float) -> None:
         self._check_openjtalk_object()
         self.jtalk.openjtalk_setVolume(self.h, value)
 
-    def set_tone(self, value: float):
+    def set_tone(self, value: float) -> None:
         self._check_openjtalk_object()
         self.jtalk.openjtalk_setAdditionalHalfTone(self.h, value)
 
-    def set_speed(self, value: float):
+    def set_speed(self, value: float) -> None:
         self._check_openjtalk_object()
         self.jtalk.openjtalk_setSpeed(self.h, value)
 
-    def set_intone(self, value: float):
+    def set_intone(self, value: float) -> None:
         self._check_openjtalk_object()
         self.jtalk.openjtalk_setGvWeightForLogF0(self.h, value)

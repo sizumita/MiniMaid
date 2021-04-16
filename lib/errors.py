@@ -1,6 +1,6 @@
 class MiniMaidException(Exception):
     def message(self) -> str:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class BotNotConnected(MiniMaidException):

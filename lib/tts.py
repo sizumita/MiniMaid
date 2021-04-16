@@ -32,15 +32,17 @@ class TextToSpeechEngine:
     def update_guild_preference(self, new_preference: GuildVoicePreference) -> None:
         self.guild_preference = new_preference
 
-    def update_dictionaries(self, type_: str, new_dic: VoiceDictionary):
+    def update_dictionary(self, type_: str, new_dic: VoiceDictionary) -> None:
         if type_ in ["update", "add"]:
             self.dictionaries[new_dic.before] = new_dic.after
         elif type_ == "remove":
             if new_dic.before in self.dictionaries:
                 del self.dictionaries[new_dic.before]
 
-    def get_source(self, text: str):
+    def get_source(self, text: str) -> io.BytesIO:
         pcm = self.jtalk.generate_pcm(text)
+        if pcm is None:
+            raise ValueError("pcm is None")
         bin_pcm = struct.pack("h" * len(pcm), *pcm)
         return io.BytesIO(audioop.tostereo(bin_pcm, 2, 1, 1))
 
@@ -50,7 +52,7 @@ class TextToSpeechEngine:
         text = text.format(**self.dictionaries)
         return text
 
-    async def generate_default_source(self, text):
+    async def generate_default_source(self, text: str) -> discord.PCMAudio:
         async with self.voice_event_lock:
             self.jtalk.set_speed(1.0)
             self.jtalk.set_tone(0)

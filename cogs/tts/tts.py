@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict, Tuple
 from collections import defaultdict
 import asyncio
 import json
@@ -26,15 +26,15 @@ comment_compiled = re.compile(r"//.*[^\n]\n")
 
 class TextToSpeechBase(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
-        self.reading_guilds = {}
+        self.reading_guilds: Dict[int, Tuple[int, int]] = {}
         self.bot = bot
-        self.locks = defaultdict(asyncio.Lock)
-        self.joined_members = defaultdict(list)
-        self.left_members = defaultdict(list)
-        self.voice_event_locks = defaultdict(asyncio.Lock)  # ユーザーが入退室した際の読み上げを割り込ませるlock
-        self.users = {}
-        self.engines = {}
-        self.english_dict = {}
+        self.locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
+        self.joined_members: Dict[int, List[discord.Member]] = defaultdict(list)
+        self.left_members: Dict[int, List[discord.Member]] = defaultdict(list)
+        self.voice_event_locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)  # ユーザーが入退室した際の読み上げを割り込ませるlock
+        self.users: Dict[int, UserVoicePreference] = {}
+        self.engines: Dict[int, TextToSpeechEngine] = {}
+        self.english_dict: Dict[str, str] = {}
         with open("dic.json", "r") as f:
             t = f.read()
             self.english_dict = json.loads(re.sub(comment_compiled, "", t))
@@ -134,7 +134,7 @@ class TextToSpeechEventMixin(TextToSpeechBase):
                 return
             await self.read_users_with_lock(message)
 
-            def check(ctx):
+            def check(ctx: Context) -> bool:
                 return ctx.channel.id == message.channel.id and ctx.author.id == message.author.id
 
             event = asyncio.Event(loop=self.bot.loop)
@@ -247,7 +247,7 @@ class TextToSpeechEventMixin(TextToSpeechBase):
     async def check_user_movement(self,
                                   member: discord.Member,
                                   before: discord.VoiceState,
-                                  after: discord.VoiceState):
+                                  after: discord.VoiceState) -> None:
         if member.id == self.bot.user.id:
             return
         if member.bot:
