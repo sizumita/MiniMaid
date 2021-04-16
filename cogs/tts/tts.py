@@ -236,11 +236,39 @@ class TextToSpeechEventMixin(TextToSpeechBase):
         if member.guild.id not in self.reading_guilds.keys():
             return
         text_channel_id, voice_channel_id = self.reading_guilds[member.guild.id]
+        if before.channel is None:
+            return
         if before.channel.id == voice_channel_id and after.channel is None:
             # 切断
-            del self.reading_guilds[member.guild.id]
+            if member.guild.id in self.reading_guilds.keys():
+                del self.reading_guilds[member.guild.id]
             if member.guild.id in self.engines.keys():
                 del self.engines[member.guild.id]
+
+    @Cog.listener(name="on_voice_state_update")
+    async def check_all_member_left(self,
+                                    member: discord.Member,
+                                    before: discord.VoiceState,
+                                    after: discord.VoiceState) -> None:
+        if member.bot:
+            return
+        if member.guild.id not in self.reading_guilds.keys():
+            return
+        if before.channel is None:
+            return
+        text_channel_id, voice_channel_id = self.reading_guilds[member.guild.id]
+
+        if before.channel.id == voice_channel_id and after.channel is None:
+            vc = member.guild.get_channel(voice_channel_id)
+            if not [i for i in vc.members if not i.bot]:
+                text_channel = self.bot.get_channel(text_channel_id)
+                if text_channel is not None:
+                    embed = discord.Embed(title=f"\U00002705 自動切断しました。", colour=discord.Colour.green())
+                    await text_channel.send(embed=embed)
+                if member.guild.id in self.reading_guilds.keys():
+                    del self.reading_guilds[member.guild.id]
+                if member.guild.id in self.engines.keys():
+                    del self.engines[member.guild.id]
 
     @Cog.listener(name="on_voice_state_update")
     async def check_user_movement(self,
