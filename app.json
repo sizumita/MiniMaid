@@ -28,7 +28,10 @@
             "url": "https://github.com/Shirataki2/heroku-buildpack-minimaid"
         },
         {
-            "url": "https://github.com/heroku/heroku-buildpack-python/"
+            "url": "https://github.com/heroku/heroku-buildpack-apt"
+        },
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-python"
         }
     ]
 }
