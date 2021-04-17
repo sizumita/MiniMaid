@@ -22,5 +22,13 @@
             "description": "Discord bot token",
             "required": true
         }
-    }
+    },
+    "buildpacks": [
+        {
+            "url": "https://github.com/Shirataki2/MiniMaid"
+        },
+        {
+            "url": "https://github.com/heroku/heroku-buildpack-python/"
+        }
+    ]
 }
