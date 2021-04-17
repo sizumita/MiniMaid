@@ -8,7 +8,6 @@ export LD_LIBRARY_PATH="/usr/local/lib"
 
 
 echo "================================"
-echo "Database URL: $DATABASE_URL"
 echo "LD Library path: $LD_LIBRARY_PATH"
 echo "Directory: $(pwd)"
 echo "Libraries: $(ls /usr/local/lib)"
