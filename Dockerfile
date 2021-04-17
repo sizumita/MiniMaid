@@ -40,5 +40,6 @@ COPY dic.json /bot
 COPY alembic.ini /bot
 COPY alembic /bot/alembic
 COPY run.sh /bot
+COPY heroku_entrypoint.sh /bot
 
 CMD ["bash", "run.sh"]
