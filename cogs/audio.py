@@ -8,8 +8,7 @@ from discord.ext.commands import (
     group,
     guild_only,
     cooldown,
-    BucketType,
-    Command
+    BucketType
 )
 import discord
 
