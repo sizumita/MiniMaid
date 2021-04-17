@@ -6,4 +6,4 @@ export DATABASE_URL="$DATABASE_URL"
 
 echo "$DATABASE_URL"
 
-python main.py
+bash run.sh

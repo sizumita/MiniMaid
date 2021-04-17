@@ -2,6 +2,7 @@
     "name": "MiniMaid",
     "description": "A multifunctional discord bot for minimum servers.",
     "repository": "https://github.com/sizumita/MiniMaid",
+    "stack": "container",
     "formation": [
         {
             "process": "bot",
@@ -22,16 +23,5 @@
             "description": "Discord bot token",
             "required": true
         }
-    },
-    "buildpacks": [
-        {
-            "url": "https://github.com/heroku/heroku-buildpack-apt"
-        },
-        {
-            "url": "https://github.com/Shirataki2/heroku-buildpack-minimaid"
-        },
-        {
-            "url": "https://github.com/heroku/heroku-buildpack-python"
-        }
-    ]
+    }
 }
