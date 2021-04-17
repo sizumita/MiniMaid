@@ -64,6 +64,11 @@
 - run `rm rf -d jtalkdll` if you want
 - pull this repo
 - install Python 3.8 or later
+- install mpg123
+    - `apt install mpg123`
+    - `brew install mpg123`
+    - you can install if your package manager
+    - otherwise you can install from https://www.mpg123.de/download.shtml
 - run `python -m venv venv`
 - run `source ./venv/bin/activate`
 - run `pip install -r requirements.txt`
