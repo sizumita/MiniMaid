@@ -46,9 +46,11 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
     @user_connected_only()
     @guild_only()
     async def join(self, ctx: Context) -> None:
-        command()
         if ctx.guild.id in self.reading_guilds.keys():
             await ctx.error("すでに接続しています", f"`{ctx.prefix}move`コマンドを使用してください。")
+            return
+        if ctx.guild.id in self.bot.get_cog("AudioCog").connecting_guilds:
+            await ctx.error("オーディオプレーヤー側で接続しています。切断してから再接続してください。")
             return
 
         channel = ctx.author.voice.channel
@@ -61,6 +63,9 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
     @bot_connected_only()
     @guild_only()
     async def leave(self, ctx: Context) -> None:
+        if ctx.guild.id not in self.reading_guilds.keys():
+            await ctx.error("読み上げ側では接続されていません。")
+            return
         del self.reading_guilds[ctx.guild.id]
         await ctx.guild.voice_client.disconnect(force=True)
         async with self.locks[ctx.guild.id]:
@@ -73,15 +78,18 @@ class TextToSpeechCommandMixin(TextToSpeechBase):
     @bot_connected_only()
     @guild_only()
     async def move(self, ctx: Context) -> None:
+        if ctx.guild.id not in self.reading_guilds.keys():
+            await ctx.error("読み上げ側では接続されていません。")
+            return
         del self.reading_guilds[ctx.guild.id]
-        await ctx.voice_client.disconnect()
+        await ctx.voice_client.disconnect(force=True)
         await ctx.author.voice.channel.connect(timeout=30.0)
         self.reading_guilds[ctx.guild.id] = (ctx.channel.id, ctx.author.voice.channel.id)
         await ctx.success("移動しました。")
 
     @command()
     async def skip(self, ctx: Context) -> None:
-        self.bot.dispatch("skip_tts", ctx)
+        self.bot.dispatch("skip", ctx)
 
 
 class TextToSpeechEventMixin(TextToSpeechBase):
@@ -134,11 +142,11 @@ class TextToSpeechEventMixin(TextToSpeechBase):
             await self.read_users_with_lock(message)
 
             def check(ctx: Context) -> bool:
-                return ctx.channel.id == message.channel.id and ctx.author.id == message.author.id
+                return ctx.channel.id == message.channel.id
 
             event = asyncio.Event(loop=self.bot.loop)
             voice_client.play(source, after=lambda err: event.set())
-            for coro in asyncio.as_completed([event.wait(), self.bot.wait_for("skip_tts", check=check, timeout=None)]):
+            for coro in asyncio.as_completed([event.wait(), self.bot.wait_for("skip", check=check, timeout=None)]):
                 result = await coro
                 if isinstance(result, Context):
                     voice_client.stop()
