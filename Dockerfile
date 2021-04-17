@@ -6,7 +6,7 @@ WORKDIR /var/speech
 RUN apt-get update && \
     apt-get install -y build-essential cmake git libasound-dev
 
-RUN git clone https://github.com/sizumita/jtalkdll.git
+RUN git clone https://github.com/shirataki2/jtalkdll.git
 
 WORKDIR /var/speech/jtalkdll
 
