@@ -43,7 +43,7 @@ class AudioCog(Cog):
         self.connecting_guilds.append(ctx.guild.id)
         await ctx.success("接続しました。")
 
-    @audio.command()
+    @audio.command(aliases=["dc", "leave"])
     @voice_channel_only()
     @bot_connected_only()
     @user_connected_only()
