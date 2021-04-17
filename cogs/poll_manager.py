@@ -48,6 +48,8 @@ class PollManagerCog(Cog):
             3... 投票していない選択肢の場合、リアクションを消してend
         """
         member = self.bot.get_guild(payload.guild_id).get_member(payload.user_id)
+        if member is None:
+            return
         if member.bot:
             return
         if not isinstance(self.bot.get_channel(payload.channel_id), discord.TextChannel):

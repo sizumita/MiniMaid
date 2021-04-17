@@ -17,14 +17,15 @@ RUN bash build
 #COPY --from=builder /usr/local/OpenJTalk/dic_utf_8 /usr/local/OpenJTalk/dic_utf_8
 #COPY --from=builder /usr/local/OpenJTalk/voice /usr/local/OpenJTalk/voice
 
+RUN pip install --upgrade pip
+
+RUN pip install numpy
 
 RUN apt-get update && \
     apt-get install -y \
-    opus-tools \
+    opus-tools mpg123 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-RUN pip install --upgrade pip
 
 WORKDIR /bot
 

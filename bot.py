@@ -44,6 +44,9 @@ class MiniMaid(commands.Bot):
         elif isinstance(exception, commands.NoPrivateMessage):
             await context.error("このコマンドはサーバー専用です。")
 
+        elif isinstance(exception, commands.CommandOnCooldown):
+            await context.error(f"クールダウン中です。{exception.retry_after:.2}秒待ってから実行してください。")
+
         else:
             await super(MiniMaid, self).on_command_error(context, exception)
 
