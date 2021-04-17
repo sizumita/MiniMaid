@@ -22,6 +22,10 @@
         "BOT_TOKEN": {
             "description": "Discord bot token",
             "required": true
+        },
+        "PREFIX": {
+            "description": "Bot prefix (e.g. `m!` for m!help)",
+            "required": true
         }
     }
 }
