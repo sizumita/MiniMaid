@@ -1,5 +1,4 @@
 build-essential
-cmake
 git
 libasound-dev
 opus-tools
