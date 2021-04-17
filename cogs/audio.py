@@ -8,7 +8,8 @@ from discord.ext.commands import (
     group,
     guild_only,
     cooldown,
-    BucketType
+    BucketType,
+    Command
 )
 import discord
 
@@ -34,6 +35,10 @@ class AudioCog(Cog):
         if ctx.guild.id in self.bot.get_cog("TextToSpeechCog").reading_guilds.keys():
             await ctx.error("読み上げ機能側で接続されています。", "切断してから再接続してください。")
             return
+        if ctx.guild.id in self.connecting_guilds:
+            await ctx.error("すでに接続しています。", "切断してから再接続してください。")
+            return
+
         await ctx.author.voice.channel.connect(timeout=30.0)
         self.connecting_guilds.append(ctx.guild.id)
         await ctx.success("接続しました。")
@@ -62,6 +67,7 @@ class AudioCog(Cog):
     async def play_audio_file(self, ctx: Context, message: Optional[MessageConverter]) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
+            ctx.command.reset_cooldown(ctx)
             return
 
         if ctx.message.attachments:
@@ -70,6 +76,7 @@ class AudioCog(Cog):
                 file = attachment
             else:
                 await ctx.error("ファイルの拡張子はmp3かwavにしてください。")
+                ctx.command.reset_cooldown(ctx)
                 return
         elif message is not None:
             msg: discord.Message = message
@@ -79,12 +86,15 @@ class AudioCog(Cog):
                     file = attachment
                 else:
                     await ctx.error("ファイルの拡張子はmp3かwavにしてください。")
+                    ctx.command.reset_cooldown(ctx)
                     return
             else:
                 await ctx.error("このメッセージにはファイルがついていません。")
+                ctx.command.reset_cooldown(ctx)
                 return
         else:
             await ctx.error("ファイルを一緒に送信するかファイルがついているメッセージを引数に入れてください。")
+            ctx.command.reset_cooldown(ctx)
             return
         source = await self.engine.create_source(file)
         async with self.locks[ctx.guild.id]:

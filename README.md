@@ -11,6 +11,7 @@
 - [x] チーム分け
 - [ ] ダイス
     - [ ] nCr
+- [x] mp3、wavファイルの再生
 - [x] VoiceChatでの読み上げ
     - [x] OpenJTalk speech
     - [x] 入退室コマンド
