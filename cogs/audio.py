@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List, Dict
 from collections import defaultdict
 import asyncio
 
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 class AudioCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
-        self.connecting_guilds = []
-        self.locks = defaultdict(asyncio.Lock)
+        self.connecting_guilds: List[int] = []
+        self.locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self.engine = AudioEngine(self.bot.loop)
 
     @group(name="audio", invoke_without_command=True)
@@ -43,7 +43,7 @@ class AudioCog(Cog):
     @bot_connected_only()
     @user_connected_only()
     @guild_only()
-    async def disconnect(self, ctx: Context):
+    async def disconnect(self, ctx: Context) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
             return
@@ -59,13 +59,13 @@ class AudioCog(Cog):
     @user_connected_only()
     @guild_only()
     @cooldown(1, 60, BucketType.guild)
-    async def play_audio_file(self, ctx: Context, message: Optional[MessageConverter]):
+    async def play_audio_file(self, ctx: Context, message: Optional[MessageConverter]) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
             return
 
         if ctx.message.attachments:
-            attachment: discord.Attachment = ctx.message.attachments[0]
+            attachment = ctx.message.attachments[0]
             if attachment.filename.endswith((".mp3", ".wav")):
                 file = attachment
             else:
@@ -74,7 +74,7 @@ class AudioCog(Cog):
         elif message is not None:
             msg: discord.Message = message
             if msg.attachments:
-                attachment: discord.Attachment = msg.attachments[0]
+                attachment = msg.attachments[0]
                 if attachment.filename.endswith((".mp3", ".wav")):
                     file = attachment
                 else:

@@ -20,10 +20,10 @@ def remove_header(content: bytes) -> bytes:
         if wav.getframerate() != 48000:
             pcm = audioop.ratecv(pcm, 2, 2, wav.getframerate(), 48000, None)[0]
 
-    return pcm
+    return discord.PCMAudio(io.BytesIO(pcm))
 
 
-def mp3_to_pcm(raw: bytes):
+def mp3_to_pcm(raw: bytes) -> bytes:
     mp3 = Mpg123()
     mp3.feed(raw)
     rate, channels, encoding = mp3.get_format()
@@ -33,7 +33,7 @@ def mp3_to_pcm(raw: bytes):
     if rate != 48000:
         data = audioop.ratecv(data, 2, channels, rate, 48000, None)[0]
 
-    return data
+    return discord.PCMAudio(io.BytesIO(data))
 
 
 class AudioEngine:
@@ -48,4 +48,4 @@ class AudioEngine:
         else:
             data = await self.loop.run_in_executor(self.executor, partial(remove_header, raw))
 
-        return discord.PCMVolumeTransformer(discord.PCMAudio(io.BytesIO(data)), volume=0.6)
+        return discord.PCMVolumeTransformer(data, volume=0.6)
