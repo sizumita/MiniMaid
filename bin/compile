@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+
+# BIN_DIR=$(cd "$(dirname "$0")" || exit 1; pwd) # absolute path
+# ROOT_DIR=$(dirname "$BIN_DIR")
+
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+ENV_DIR=${3:-}
+
+mkdir -p "$BUILD_DIR/.heroku/minimaid/lib"
+mkdir -p "$BUILD_DIR/.heroku/minimaid/include"
+mkdir -p "$BUILD_DIR/.heroku/minimaid/OpenJTalk"
+
+export BUILD_DIR CACHE_DIR ENV_DIR
+
+mkdir -p "$CACHE_DIR"
+cd "$CACHE_DIR" || exit 1
+
+echo "-----> Install Dependencies"
+apt-get update && apt-get install -y \\
+    build-essential \\
+    cmake \\
+    git \\
+    libasound-dev \\
+    opus-tools
+
+echo "-----> Build JTalkDll"
+git clone https://github.com/sizumita/jtalkdll.git
+cd jtalkdll || exit 1
+bash build
+
+cp -r /usr/local/lib/libjtalk.so "$BUILD_DIR/.heroku/minimaid/lib"
+cp -r /usr/local/include/jtalk.h "$BUILD_DIR/.heroku/minimaid/include"
+cp -r /usr/local/OpenJTalk/dic_utf_8 "$BUILD_DIR/.heroku/minimaid/OpenJTalk"
+cp -r /usr/local/OpenJTalk/voice "$BUILD_DIR/.heroku/minimaid/OpenJTalk"
