@@ -3,7 +3,7 @@ import audioop
 import io
 import struct
 import re
-from typing import List
+from typing import List, Optional
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 
@@ -13,6 +13,7 @@ from lib.database.models import GuildVoicePreference, UserVoicePreference, Voice
 from lib.jtalk import JTalk
 
 english_compiled = re.compile(r"[a-zA-Z]+")
+code_block_compiled = re.compile(r"```(?!.*```)[\s\S]*```")
 
 
 class TextToSpeechEngine:
@@ -65,12 +66,13 @@ class TextToSpeechEngine:
     async def generate_source(self,
                               message: discord.Message,
                               user_preference: UserVoicePreference,
-                              english_dict: dict) -> discord.PCMAudio:
+                              english_dict: dict) -> Optional[discord.PCMAudio]:
         read_name = all((
             True if self.least_user != message.author.id else False,
             self.guild_preference.read_name
         ))
         text = message.clean_content
+        text = code_block_compiled.sub("", text)
         if read_name:
             if self.guild_preference.read_nick:
                 text = message.author.display_name + "、" + text
@@ -83,6 +85,8 @@ class TextToSpeechEngine:
                 text = text.replace(sentence, english_dict[sentence.upper()])
         if len(text) > self.guild_preference.limit:
             text = text[:self.guild_preference.limit] + "、以下略"
+        if not text:
+            return None
 
         async with self.jtalk_lock:
             # async with self.voice_event_lock:
