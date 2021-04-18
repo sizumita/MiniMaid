@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.9.4
 #FROM ubuntu:18.04 as builder
 
 WORKDIR /var/speech
