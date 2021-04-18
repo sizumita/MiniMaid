@@ -14,6 +14,11 @@ if TYPE_CHECKING:
 
 PARTY_HELP = """
 `{0.prefix}party list` -> パーティ一覧を表示します。
+`{0.prefix}party create <パーティー名>` -> パーティを作成します。
+`{0.prefix}party join <パーティー名>` -> パーティに参加します。
+`{0.prefix}party leave <パーティー名>` -> パーティから離脱します。
+`{0.prefix}party call <パーティー名> <メッセージ>` -> パーティメンバー全員にメンションをします。先頭にはメッセージがつけられます。
+`{0.prefix}party remove <パーティー名>` -> パーティを削除します。作成者かサーバーの管理権限を持っているユーザーが可能です。
 """
 
 
