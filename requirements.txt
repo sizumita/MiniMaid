@@ -1,5 +1,5 @@
 discord.py[voice]==1.7.1
-sqlalchemy==1.4.8
+sqlalchemy==1.4.9
 asyncpg==0.22.0
 numpy==1.20.2
 more-itertools==8.7.0
