@@ -134,6 +134,8 @@ class TextToSpeechEventMixin(TextToSpeechBase):
         if message.author.bot and not engine.guild_preference.read_bot:
             return
         source = await engine.generate_source(message, user_preference, self.english_dict)
+        if source is None:
+            return
 
         async with self.locks[message.guild.id]:
             voice_client: discord.VoiceClient = message.guild.voice_client
