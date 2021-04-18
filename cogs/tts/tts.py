@@ -264,7 +264,7 @@ class TextToSpeechEventMixin(TextToSpeechBase):
                 await member.guild.voice_client.disconnect(force=True)
                 text_channel = self.bot.get_channel(text_channel_id)
                 if text_channel is not None:
-                    embed = discord.Embed(title=f"\U00002705 自動切断しました。", colour=discord.Colour.green())
+                    embed = discord.Embed(title="\U00002705 自動切断しました。", colour=discord.Colour.green())
                     await text_channel.send(embed=embed)
                 if member.guild.id in self.reading_guilds.keys():
                     del self.reading_guilds[member.guild.id]
