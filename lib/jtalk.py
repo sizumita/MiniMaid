@@ -12,7 +12,6 @@ from ctypes import (
     byref,
     c_short
 )
-from ctypes.util import find_library
 import platform
 from typing import Optional
 
@@ -34,9 +33,14 @@ class JTalk:
 
         self._voices: list = []
         self._three = platform.python_version_tuple()[0] == '3'
-        lib = find_library("libjtalk")
-        if lib is None:
-            raise ValueError("cannot find libjtalk")
+
+        if platform.system() == 'Windows':
+            lib = 'jtalk'
+        elif platform.system() == 'Darwin':
+            lib = 'libjtalk.dylib'
+        else:
+            lib = 'libjtalk.so'
+
         self.jtalk = cdll.LoadLibrary(lib)
         self.set_argtypes()
         self.h = self.jtalk.openjtalk_initialize(voice_path, voice_dir_path, dic_path)
