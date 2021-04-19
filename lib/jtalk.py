@@ -34,8 +34,10 @@ class JTalk:
 
         self._voices: list = []
         self._three = platform.python_version_tuple()[0] == '3'
-
-        self.jtalk = cdll.LoadLibrary(find_library("jtalk"))
+        lib = find_library("libjtalk")
+        if lib is None:
+            raise ValueError("cannot find libjtalk")
+        self.jtalk = cdll.LoadLibrary(lib)
         self.set_argtypes()
         self.h = self.jtalk.openjtalk_initialize(voice_path, voice_dir_path, dic_path)
 
