@@ -20,7 +20,7 @@ def remove_header(content: bytes) -> bytes:
         if wav.getframerate() != 48000:
             pcm = audioop.ratecv(pcm, 2, 2, wav.getframerate(), 48000, None)[0]
 
-    return discord.PCMAudio(io.BytesIO(pcm))
+    return io.BytesIO(pcm)
 
 
 def mp3_to_pcm(raw: bytes) -> bytes:
@@ -33,7 +33,7 @@ def mp3_to_pcm(raw: bytes) -> bytes:
     if rate != 48000:
         data = audioop.ratecv(data, 2, channels, rate, 48000, None)[0]
 
-    return discord.PCMAudio(io.BytesIO(data))
+    return io.BytesIO(data)
 
 
 class AudioEngine:
@@ -41,11 +41,15 @@ class AudioEngine:
         self.loop = loop
         self.executor = ThreadPoolExecutor()
 
-    async def create_source(self, attachment: discord.Attachment) -> discord.PCMAudio:
-        raw = await attachment.read()
-        if attachment.filename.endswith(".mp3"):
-            data = await self.loop.run_in_executor(self.executor, partial(mp3_to_pcm, raw))
+    async def to_pcm(self, raw: bytes, filetype: str):
+        if filetype == "mp3":
+            return await self.loop.run_in_executor(self.executor, partial(mp3_to_pcm, raw))
         else:
-            data = await self.loop.run_in_executor(self.executor, partial(remove_header, raw))
+            return await self.loop.run_in_executor(self.executor, partial(remove_header, raw))
 
-        return discord.PCMVolumeTransformer(data, volume=0.6)
+    async def create_source(self, attachment: discord.Attachment) -> discord.AudioSource:
+        raw = await attachment.read()
+
+        data = await self.to_pcm(raw, "mp3" if attachment.filename.endswith(".mp3") else "wav")
+
+        return discord.PCMVolumeTransformer(discord.PCMAudio(data), volume=0.8)
