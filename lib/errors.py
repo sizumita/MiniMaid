@@ -18,6 +18,11 @@ class NoStageChannel(MiniMaidException):
         return "この機能はステージチャンネルに対応していません。"
 
 
+class AudioFileNotFound(MiniMaidException):
+    def message(self) -> str:
+        return "タグに紐つけられているオーディオファイルが存在しません。"
+
+
 class LibInitializationException(Exception):
     pass
 

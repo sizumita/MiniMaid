@@ -10,7 +10,8 @@ from lib.database.models import (
     Choice,
     UserVoicePreference,
     GuildVoicePreference,
-    VoiceDictionary
+    VoiceDictionary,
+    AudioTag
 )
 
 
@@ -61,3 +62,11 @@ def select_voice_dictionaries(guild_id: int) -> Select:
 
 def select_voice_dictionary(guild_id: int, before: str) -> Select:
     return select(VoiceDictionary).where(VoiceDictionary.guild_id == guild_id).where(VoiceDictionary.before == before)
+
+
+def select_audio_tag(guild_id: int, name: str) -> Select:
+    return select(AudioTag).where(AudioTag.guild_id == guild_id).where(AudioTag.name == name)
+
+
+def select_audio_tags(guild_id: int) -> Select:
+    return select(AudioTag).where(AudioTag.guild_id == guild_id)
