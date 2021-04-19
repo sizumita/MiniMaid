@@ -8,7 +8,7 @@ from functools import partial
 import asyncio
 
 
-def remove_header(content: bytes) -> bytes:
+def remove_header(content: bytes) -> io.BytesIO:
     with wave.open(io.BytesIO(content)) as wav:
         bit = wav.getsampwidth()
         pcm = wav.readframes(wav.getnframes())
@@ -23,7 +23,7 @@ def remove_header(content: bytes) -> bytes:
     return io.BytesIO(pcm)
 
 
-def mp3_to_pcm(raw: bytes) -> bytes:
+def mp3_to_pcm(raw: bytes) -> io.BytesIO:
     mp3 = Mpg123()
     mp3.feed(raw)
     rate, channels, encoding = mp3.get_format()
@@ -41,7 +41,7 @@ class AudioEngine:
         self.loop = loop
         self.executor = ThreadPoolExecutor()
 
-    async def to_pcm(self, raw: bytes, filetype: str):
+    async def to_pcm(self, raw: bytes, filetype: str) -> io.BytesIO:
         if filetype == "mp3":
             return await self.loop.run_in_executor(self.executor, partial(mp3_to_pcm, raw))
         else:

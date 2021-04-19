@@ -36,7 +36,7 @@ class TagAttachment:
         self.filename = self.tag.name
         self.url = self.tag.audio_url
 
-    async def read(self):
+    async def read(self) -> bytes:
         async with aiohttp.ClientSession() as session:
             async with session.get(self.tag.audio_url) as response:
                 return await response.read()
@@ -155,7 +155,7 @@ class AudioCog(Cog):
 
     @audio.group(name="tag", invoke_without_command=True)
     @guild_only()
-    async def voice_tag(self, ctx: Context):
+    async def voice_tag(self, ctx: Context) -> None:
         async with self.bot.db.SerializedSession() as session:
             result = await session.execute(select_audio_tags(ctx.guild.id))
             tags = result.scalars().all()
@@ -167,7 +167,7 @@ class AudioCog(Cog):
 
     @voice_tag.command(name="add")
     @cooldown(10, 60.0, BucketType.guild)
-    async def voice_tag_add(self, ctx: Context, name: str, msg: Optional[MessageConverter], url: Optional[str]):
+    async def voice_tag_add(self, ctx: Context, name: str, msg: Optional[MessageConverter], url: Optional[str]) -> None:
         """AudioTagを生成する"""
 
         # タグ用のaudio url生成
@@ -201,8 +201,8 @@ class AudioCog(Cog):
                 return
 
         elif url is not None and url_compiled.match(url):
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url) as response:
+            async with aiohttp.ClientSession() as http_session:
+                async with http_session.get(url) as response:
                     if not (200 <= response.status <= 299):
                         await ctx.error("URLからファイルの取得に失敗しました。")
                         return
@@ -240,7 +240,7 @@ class AudioCog(Cog):
         await ctx.success(text)
 
     @voice_tag.command(name="remove", aliases=["delete", "rm"])
-    async def voice_tag_delete(self, ctx: Context, name: str):
+    async def voice_tag_delete(self, ctx: Context, name: str) -> None:
         async with self.bot.db.SerializedSession() as session:
             result = await session.execute(select_audio_tag(ctx.guild.id, name))
             tag = result.scalars().first()
