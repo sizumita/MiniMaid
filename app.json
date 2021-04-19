@@ -2,6 +2,7 @@
     "name": "MiniMaid",
     "description": "A multifunctional discord bot for minimum servers.",
     "repository": "https://github.com/sizumita/MiniMaid",
+    "stack": "container",
     "formation": [
         {
             "process": "bot",
@@ -20,6 +21,10 @@
     "env": {
         "BOT_TOKEN": {
             "description": "Discord bot token",
+            "required": true
+        },
+        "PREFIX": {
+            "description": "Bot prefix (e.g. `m!` for m!help)",
             "required": true
         }
     }

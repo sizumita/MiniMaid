@@ -91,12 +91,11 @@ Discordで便利な機能を提供するオープンソースのBotです。
 - run `alembic upgrade head`
 - run `python main.py`
 
-# Heroku support
-
-## warning: the least version is not available
-
-Click the button below to deploy to Heroku.
+# Herokuでのデプロイ
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-For more information about pricing, please refer to [here](https://www.heroku.com/pricing).
+上のボタンを押し，BOTのトークン等の情報を入れることでもBOTをデプロイすることができます．
+
+料金体系については[こちら](https://www.heroku.com/pricing)をご覧ください.
+基本的に無料ですがいくつかの制約事項があります．
