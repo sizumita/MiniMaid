@@ -10,7 +10,8 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Boolean,
-    Float
+    Float,
+    UniqueConstraint
 )
 
 from lib.database.base import Base
@@ -104,3 +105,16 @@ class VoiceDictionary(Base):
 
     owner_id = Column(BigInteger)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class AudioTag(Base):
+    __tablename__ = "audio_tags"
+    __table_args__ = (UniqueConstraint('guild_id', 'name'), {})
+    id = Column(Integer, primary_key=True)
+    guild_id = Column(BigInteger, nullable=False)
+
+    name = Column(String, nullable=False)
+    audio_url = Column(String, nullable=False)
+
+    owner_id = Column(BigInteger, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
