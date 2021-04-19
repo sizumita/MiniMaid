@@ -31,4 +31,4 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.0.0
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.0.1
