@@ -1,21 +1,22 @@
-FROM python:3.9.4
-#FROM ubuntu:18.04 as builder
+FROM ubuntu:18.04 as builder
 
 WORKDIR /var/speech
 
 RUN apt-get update && \
-    apt-get install -y build-essential cmake git libasound-dev
+    apt-get install -y build-essential cmake git
 
-RUN git clone https://github.com/shirataki2/jtalkdll.git
+RUN git clone https://github.com/sizumita/jtalkdll.git
 
 WORKDIR /var/speech/jtalkdll
 
 RUN bash build
 
-#COPY --from=builder /usr/local/lib/libjtalk.so /usr/local/lib
-#COPY --from=builder /usr/local/include/jtalk.h /usr/local/include
-#COPY --from=builder /usr/local/OpenJTalk/dic_utf_8 /usr/local/OpenJTalk/dic_utf_8
-#COPY --from=builder /usr/local/OpenJTalk/voice /usr/local/OpenJTalk/voice
+FROM python:3.9.4
+
+COPY --from=builder /usr/local/lib/libjtalk.so /usr/local/lib
+COPY --from=builder /usr/local/include/jtalk.h /usr/local/include
+COPY --from=builder /usr/local/OpenJTalk/dic_utf_8 /usr/local/OpenJTalk/dic_utf_8
+COPY --from=builder /usr/local/OpenJTalk/voice /usr/local/OpenJTalk/voice
 
 RUN pip install --upgrade pip
 
