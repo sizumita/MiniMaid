@@ -84,3 +84,11 @@ def select_feed(url: str) -> Select:
 
 def select_reader(feed_id: int, channel_id: int) -> Select:
     return select(Reader).where(Reader.feed_id == feed_id).where(Reader.channel_id == channel_id)
+
+
+def select_reader_by_id(reader_id: int) -> Select:
+    return select(Reader).where(Reader.id == reader_id).options(selectinload(Reader.feed))
+
+
+def select_reader_by_channel_id(channel_id: int) -> Select:
+    return select(Reader).where(Reader.channel_id == channel_id).options(selectinload(Reader.feed))

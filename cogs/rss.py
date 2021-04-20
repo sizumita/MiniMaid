@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 import re
-import io
 
 from discord.ext.commands import (
     Cog,
@@ -8,11 +7,12 @@ from discord.ext.commands import (
 )
 import aiohttp
 import feedparser
+import discord
 
 from lib.rss.scheduler import FeedScheduler
 from lib.context import Context
 from lib.database.models import Feed, Reader
-from lib.database.query import select_feed, select_reader
+from lib.database.query import select_feed, select_reader, select_reader_by_id, select_reader_by_channel_id
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -30,7 +30,21 @@ class RSSCog(Cog):
 
     @group(invoke_without_command=True)
     async def rss(self, ctx: Context) -> None:
-        pass
+        async with self.bot.db.Session() as session:
+            result = await session.execute(select_reader_by_channel_id(ctx.channel.id))
+            readers = result.scalars().all()
+            if not readers:
+                await ctx.error("このチャンネルではRSSは登録されていません。")
+                return
+            await session.commit()
+        embed = discord.Embed(
+            title="RSS一覧",
+            colour=discord.Colour.dark_orange()
+        )
+        embed.description = "**ID : URL**\n" + "\n".join([f"**{reader.id}**: {reader.feed.url}" for reader in readers])
+        embed.set_footer(text=f"{ctx.prefix}rss remove <RSSのID> で削除できます。")
+
+        await ctx.embed(embed)
 
     @rss.command(name="add")
     async def add_rss(self, ctx: Context, url: str) -> None:
@@ -66,9 +80,17 @@ class RSSCog(Cog):
             await session.commit()
         await ctx.success("RSSの配信を設定しました。")
 
-    @rss.command()
+    @rss.command(name="remove", aliases=["rm", "delete"])
     async def remove_rss(self, ctx: Context, rss_id: int) -> None:
-        pass
+        async with self.bot.db.SerializedSession() as session:
+            result = await session.execute(select_reader_by_id(rss_id))
+            reader = result.scalars().first()
+            if reader is None or reader.channel_id != ctx.channel.id:
+                await ctx.error("そのidのRSSは登録されていません。")
+                return
+            await session.delete(reader)
+            await session.commit()
+        await ctx.success(f"ID: {rss_id} を削除しました。")
 
 
 def setup(bot: 'MiniMaid') -> None:

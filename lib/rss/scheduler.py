@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 from datetime import datetime, timedelta
 import asyncio
 import aiohttp
-from pytz import timezone
 
 import feedparser
 import discord
@@ -24,7 +23,7 @@ def strptime(text: str) -> datetime:
 class FeedScheduler:
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
-        self.task = self.bot.loop.create_task(self.task())
+        self.task = self.bot.loop.create_task(self.task())  # type: ignore
 
     async def send_entry(self, feed: Feed, embed: discord.Embed) -> None:
         try:
@@ -35,7 +34,7 @@ class FeedScheduler:
         except Exception as e:
             print(e)
 
-    async def send_new_entries(self, feed: Feed):
+    async def send_new_entries(self, feed: Feed) -> None:
         async with aiohttp.ClientSession(loop=self.bot.loop) as http_session:
             async with http_session.get(feed.url) as response:
                 if response.status >= 400:
@@ -58,7 +57,7 @@ class FeedScheduler:
             embed.set_footer(text=entry.author)
             self.bot.loop.create_task(self.send_entry(feed, embed))
 
-    async def fetch_all_feeds(self):
+    async def fetch_all_feeds(self) -> None:
         now = datetime.utcnow()
         async with self.bot.db.Session() as session:
             result = await session.execute(select_all_feeds())
@@ -68,7 +67,7 @@ class FeedScheduler:
                 feed.updated_at = now
             await session.commit()
 
-    async def task(self):
+    async def task(self) -> None:
         await self.bot.wait_until_ready()
         while not self.bot.is_closed():
             try:

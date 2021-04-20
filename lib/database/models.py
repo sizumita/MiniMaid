@@ -137,6 +137,7 @@ class Reader(Base):
     __tablename__ = "readers"
     id = Column(Integer, primary_key=True)
     feed_id = Column(Integer, ForeignKey('feeds.id'), nullable=False)
+    feed = relationship("Feed", back_populates="readers")
 
     channel_id = Column(BigInteger, nullable=False)
 
