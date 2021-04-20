@@ -11,7 +11,9 @@ from lib.database.models import (
     UserVoicePreference,
     GuildVoicePreference,
     VoiceDictionary,
-    AudioTag
+    AudioTag,
+    Feed,
+    Reader
 )
 
 
@@ -70,3 +72,15 @@ def select_audio_tag(guild_id: int, name: str) -> Select:
 
 def select_audio_tags(guild_id: int) -> Select:
     return select(AudioTag).where(AudioTag.guild_id == guild_id)
+
+
+def select_all_feeds() -> Select:
+    return select(Feed).where(Feed.available).options(selectinload(Feed.readers))
+
+
+def select_feed(url: str) -> Select:
+    return select(Feed).where(Feed.available).where(Feed.url == url)
+
+
+def select_reader(feed_id: int, channel_id: int) -> Select:
+    return select(Reader).where(Reader.feed_id == feed_id).where(Reader.channel_id == channel_id)
