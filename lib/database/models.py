@@ -119,3 +119,27 @@ class AudioTag(Base):
 
     owner_id = Column(BigInteger, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Feed(Base):
+    __tablename__ = "feeds"
+    id = Column(Integer, primary_key=True)
+
+    url = Column(String, unique=True, nullable=False)
+    readers = relationship("Reader")
+    updated_at = Column(DateTime, default=datetime.utcnow, nullable=False)  # 最終更新時
+    available = Column(Boolean, default=True, nullable=False)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+
+class Reader(Base):
+    __tablename__ = "readers"
+    id = Column(Integer, primary_key=True)
+    feed_id = Column(Integer, ForeignKey('feeds.id'), nullable=False)
+    feed = relationship("Feed", back_populates="readers")
+
+    channel_id = Column(BigInteger, nullable=False)
+
+    owner_id = Column(BigInteger, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
