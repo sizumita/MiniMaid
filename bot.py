@@ -28,6 +28,7 @@ class MiniMaid(commands.Bot):
 
             message = args[0]
             await message.channel.send(embed=embed)
+            return
 
         await super(MiniMaid, self).on_error(event_method, *args, **kwargs)
 
@@ -45,7 +46,7 @@ class MiniMaid(commands.Bot):
             await context.error("このコマンドはサーバー専用です。")
 
         elif isinstance(exception, commands.CommandOnCooldown):
-            await context.error(f"クールダウン中です。{exception.retry_after:.2}秒待ってから実行してください。")
+            await context.error(f"クールダウン中です。{int(exception.retry_after)}秒待ってから実行してください。")
 
         else:
             await super(MiniMaid, self).on_command_error(context, exception)
