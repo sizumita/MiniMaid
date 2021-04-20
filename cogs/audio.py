@@ -153,6 +153,8 @@ class AudioCog(Cog):
                     ctx.voice_client.stop()
                     await result.success("skipしました。")
                 break
+            await asyncio.sleep(5)
+            ctx.command.reset_cooldown(ctx)
 
     @audio.group(name="tag", invoke_without_command=True)
     @guild_only()

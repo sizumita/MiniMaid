@@ -51,7 +51,7 @@ default_emojis = [
 
 
 def check_permission(ctx: Context) -> Tuple[bool, str]:
-    permissions: discord.Permissions = ctx.channel.permissions_for(ctx.author)
+    permissions: discord.Permissions = ctx.channel.permissions_for(ctx.guild.me)
     if not permissions.add_reactions:
         return False, "リアクションの追加"
     if not permissions.manage_messages:
