@@ -4,6 +4,7 @@ import asyncio
 import re
 from io import BytesIO
 from uuid import uuid4
+from datetime import datetime
 
 from discord.ext.commands import (
     Cog,
@@ -22,6 +23,7 @@ from lib.checks import user_connected_only, bot_connected_only, voice_channel_on
 from lib.audio import AudioEngine
 from lib.database.models import AudioTag
 from lib.database.query import select_audio_tag, select_audio_tags
+from lib.discord.voice_client import MiniMaidVoiceClient
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -43,13 +45,15 @@ class TagAttachment:
                 return await response.read()
 
 
-class AudioCog(Cog):
+class AudioBase(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
         self.connecting_guilds: List[int] = []
         self.locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self.engine = AudioEngine(self.bot.loop)
 
+
+class AudioCommandMixin(AudioBase):
     @group(name="audio", invoke_without_command=True)
     @user_connected_only()
     @guild_only()
@@ -61,7 +65,7 @@ class AudioCog(Cog):
             await ctx.error("すでに接続しています。", "切断してから再接続してください。")
             return
 
-        await ctx.author.voice.channel.connect(timeout=30.0)
+        await ctx.author.voice.channel.connect(timeout=30.0, cls=MiniMaidVoiceClient)
         self.connecting_guilds.append(ctx.guild.id)
         await ctx.success("接続しました。")
 
@@ -253,6 +257,37 @@ class AudioCog(Cog):
             await session.delete(tag)
             await session.commit()
         await ctx.success(f"タグ: {name}の削除に成功しました。")
+
+    @audio.group(name="record", invoke_without_command=True)
+    @voice_channel_only()
+    @bot_connected_only()
+    @user_connected_only()
+    @guild_only()
+    async def voice_recorder(self, ctx: Context) -> None:
+        pass
+
+    @voice_recorder.command(name="start")
+    async def record_start(self, ctx: Context) -> None:
+        if ctx.guild.id not in self.connecting_guilds:
+            await ctx.error("オーディオプレーヤー側では接続されていません。")
+            return
+        await ctx.success("録音開始します...")
+        file = await ctx.voice_client.record()
+        await ctx.success("録音終了しました。")
+        timestamp = datetime.utcnow().timestamp()
+        file.seek(0)
+        await ctx.send(file=discord.File(file, f"{timestamp}.wav"))
+
+    @voice_recorder.command(name="stop", aliases=["end"])
+    async def record_stop(self, ctx: Context) -> None:
+        if ctx.guild.id not in self.connecting_guilds:
+            await ctx.error("オーディオプレーヤー側では接続されていません。")
+            return
+        self.bot.dispatch("record_stop")
+
+
+class AudioCog(AudioCommandMixin):
+    pass
 
 
 def setup(bot: 'MiniMaid') -> None:
