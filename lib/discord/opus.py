@@ -1,3 +1,4 @@
+# type: ignore
 import asyncio
 from io import BytesIO
 import wave
@@ -32,10 +33,10 @@ class RTPPacket(PacketBase):
         self.decrypted = decrypted
         self.seq, self._timestamp, self.ssrc = struct.unpack_from('>HII', header, 2)
 
-    def calc_extention_header_length(self, data):
+    def calc_extention_header_length(self, data: bytes) -> None:
         if self.cc:
             self.csrcs = struct.unpack_from(
-                '>%dI' % self.cc, data, self.offset)
+                '>%dI' % self.cc, data, self.offset)  # type: ignore
             self.offset += self.cc * 4
         if self.extend:
             self.profile, self.ext_length = struct.unpack_from(
@@ -61,10 +62,10 @@ class RTCPPacket(PacketBase):
 
 
 class BufferDecoder:
-    def __init__(self, loop: asyncio.AbstractEventLoop):
+    def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self.loop = loop
         self.executor = ThreadPoolExecutor(10)
-        self.queue = asyncio.Queue(10 ^ 3)
+        self.queue: asyncio.Queue = asyncio.Queue(10 ^ 3)
         self.task = None
         self.decoder = Decoder()
         self.decoded = asyncio.Event()
@@ -72,11 +73,11 @@ class BufferDecoder:
         self.file = BytesIO()
         self.unix_timestamp = None
 
-    async def decode_task(self):
+    async def decode_task(self) -> None:
         self.decoded.clear()
         wav = wave.open(self.file, "w")
         wav.setnchannels(Decoder.CHANNELS)
-        wav.setsampwidth(Decoder.SAMPLE_SIZE//Decoder.CHANNELS)
+        wav.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
         wav.setframerate(Decoder.SAMPLING_RATE)
 
         try:
@@ -109,14 +110,14 @@ class BufferDecoder:
     async def push(self, packet: PacketBase) -> None:
         await self.queue.put(packet)
 
-    def stop(self):
+    def stop(self) -> None:
         if self.task is not None:
             self.task.cancel()
 
-    def start(self):
+    def start(self) -> None:
         self.task = self.loop.create_task(self.decode_task())
 
-    def clean(self):
+    def clean(self) -> None:
         self.file = BytesIO()
         self.task = None
         self.unix_timestamp = None

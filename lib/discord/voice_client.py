@@ -5,7 +5,7 @@ from lib.discord.websocket import MiniMaidVoiceWebSocket
 
 
 class MiniMaidVoiceClient(VoiceClient):
-    async def connect_websocket(self):
+    async def connect_websocket(self) -> MiniMaidVoiceWebSocket:
         ws = await MiniMaidVoiceWebSocket.from_client(self)
         self._connected.clear()
         while ws.secret_key is None:

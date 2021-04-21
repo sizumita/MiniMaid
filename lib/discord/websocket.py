@@ -1,13 +1,12 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 import asyncio
 from aiohttp import ClientWebSocketResponse
 from io import BytesIO
 
 from discord.gateway import DiscordVoiceWebSocket
-from discord.opus import Decoder
 import nacl.secret
 
-from lib.discord.opus import BufferDecoder, RTCPPacket, RTPPacket
+from lib.discord.opus import BufferDecoder, RTPPacket
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -17,12 +16,14 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
     def __init__(self, websocket: ClientWebSocketResponse, loop: asyncio.AbstractEventLoop) -> None:
         super().__init__(websocket, loop)
         self.can_record = False
-        self.box = None
+        self.box: Optional[nacl.secret.SecretBox] = None
         self.decoder = BufferDecoder(self.loop)
         self.record_task = None
         self.is_recording = False
 
-    def decrypt_xsalsa20_poly1305(self, data):
+    def decrypt_xsalsa20_poly1305(self, data: bytes) -> tuple:
+        if self.box is None:
+            raise ValueError("box is None")
         is_rtcp = 200 <= data[1] < 205
         if is_rtcp:
             header, encrypted = data[:8], data[8:]
@@ -34,7 +35,9 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             nonce[:12] = header
         return header, self.box.decrypt(bytes(encrypted), bytes(nonce))
 
-    def decrypt_xsalsa20_poly1305_suffix(self, data):
+    def decrypt_xsalsa20_poly1305_suffix(self, data: bytes) -> tuple:
+        if self.box is None:
+            raise ValueError("box is None")
         is_rtcp = 200 <= data[1] < 205
         if is_rtcp:
             header, encrypted, nonce = data[:8], data[8:-24], data[-24:]
@@ -42,7 +45,9 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             header, encrypted, nonce = data[:12], data[12:-24], data[-24:]
         return header, self.box.decrypt(bytes(encrypted), bytes(nonce))
 
-    def decrypt_xsalsa20_poly1305_lite(self, data):
+    def decrypt_xsalsa20_poly1305_lite(self, data: bytes) -> tuple:
+        if self.box is None:
+            raise ValueError("box is None")
         is_rtcp = 200 <= data[1] < 205
         if is_rtcp:
             header, encrypted, _nonce = data[:8], data[8:-4], data[-4:]
@@ -52,7 +57,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         nonce[:4] = _nonce
         return header, self.box.decrypt(bytes(encrypted), bytes(nonce))
 
-    async def record(self):
+    async def record(self) -> None:
         state = self._connection
         while True:
             recv = await self.loop.sock_recv(state.socket, 2 ** 16)
@@ -90,7 +95,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             self.can_record = True
             self.record_task = self.loop.create_task(self.record())
 
-    async def close(self, code=1000):
+    async def close(self, code: int = 1000) -> None:
         if self.record_task is not None:
             self.record_task.cancel()
         await super(MiniMaidVoiceWebSocket, self).close(code)
