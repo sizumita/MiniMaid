@@ -51,7 +51,7 @@ class AudioBase(Cog):
         self.connecting_guilds: List[int] = []
         self.locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self.engine = AudioEngine(self.bot.loop)
-        self.recording_guilds = []
+        self.recording_guilds: List[int] = []
 
 
 class AudioCommandMixin(AudioBase):
