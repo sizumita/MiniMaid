@@ -26,6 +26,7 @@ Discordで便利な機能を提供するオープンソースのBotです。
 - [ ] ダイス
     - [ ] nCr
 - [x] mp3、wavファイルの再生
+- [x] ボイスチャットの録音
 - [x] VoiceChatでの読み上げ
     - [x] OpenJTalk speech
     - [x] 入退室コマンド
