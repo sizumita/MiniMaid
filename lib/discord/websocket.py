@@ -19,6 +19,8 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         self.can_record = False
         self.box = None
         self.decoder = BufferDecoder(self.loop)
+        self.record_task = None
+        self.is_recording = False
 
     def decrypt_xsalsa20_poly1305(self, data):
         is_rtcp = 200 <= data[1] < 205
@@ -54,6 +56,8 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         state = self._connection
         while True:
             recv = await self.loop.sock_recv(state.socket, 2 ** 16)
+            if not self.is_recording:
+                continue
             decrypt_fn = getattr(self, f'decrypt_{state.mode}')
             header, data = decrypt_fn(recv)
             if 200 <= header[1] <= 204:
@@ -62,16 +66,18 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             await self.decoder.push(packet)
 
     async def receive_audio_packet(self, bot: 'MiniMaid') -> BytesIO:
+        self.decoder.clean()
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
 
-        record_task = self.loop.create_task(self.record())
+        self.is_recording = True
         self.decoder.start()
         try:
             await bot.wait_for("record_stop", timeout=30)
         except asyncio.TimeoutError:
             pass
-        record_task.cancel()
+        self.is_recording = False
         self.decoder.stop()
+        await self.decoder.decoded.wait()
 
         return self.decoder.file
 
@@ -82,3 +88,9 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
 
         if op == 4:
             self.can_record = True
+            self.record_task = self.loop.create_task(self.record())
+
+    async def close(self, code=1000):
+        if self.record_task is not None:
+            self.record_task.cancel()
+        await super(MiniMaidVoiceWebSocket, self).close(code)

@@ -4,6 +4,7 @@ import wave
 import struct
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import time
 
 from discord.opus import Decoder
 
@@ -15,9 +16,34 @@ class PacketBase:
 
 class RTPPacket(PacketBase):
     def __init__(self, header: bytes, decrypted: bytes):
+        self.version = (header[0] & 0b11000000) >> 6
+        self.padding = (header[0] & 0b00100000) >> 5
+        self.extend = (header[0] & 0b00010000) >> 4
+        self.cc = header[0] & 0b00001111
+        self.marker = header[1] >> 7
+        self.payload_type = header[1] & 0b01111111
+        self.offset = 0
+        self.ext_length = None
+        self.ext_header = None
+        self.csrcs = None
+        self.profile = None
+
         self.header = header
         self.decrypted = decrypted
         self.seq, self._timestamp, self.ssrc = struct.unpack_from('>HII', header, 2)
+
+    def calc_extention_header_length(self, data):
+        if self.cc:
+            self.csrcs = struct.unpack_from(
+                '>%dI' % self.cc, data, self.offset)
+            self.offset += self.cc * 4
+        if self.extend:
+            self.profile, self.ext_length = struct.unpack_from(
+                '>HH', data)
+            self.ext_header = struct.unpack_from(
+                '>%dI' % self.ext_length, data, 4)
+            self.offset += self.ext_length * 4 + 4
+        self.decrypted = self.decrypted[self.offset:]
 
     @property
     def timestamp(self):
@@ -44,9 +70,10 @@ class BufferDecoder:
         self.decoded = asyncio.Event()
         self.last_timestamp = None
         self.file = BytesIO()
+        self.unix_timestamp = None
 
     async def decode_task(self):
-        self.file.seek(0)
+        self.decoded.clear()
         wav = wave.open(self.file, "w")
         wav.setnchannels(Decoder.CHANNELS)
         wav.setsampwidth(Decoder.SAMPLE_SIZE//Decoder.CHANNELS)
@@ -57,20 +84,23 @@ class BufferDecoder:
                 packet = await self.queue.get()
 
                 if len(packet.decrypted) < 10:
+                    self.unix_timestamp = time.time()
                     continue
 
                 data = self.decoder.decode(packet.decrypted)
                 if self.last_timestamp is not None:
                     blank = (packet.timestamp - self.last_timestamp) / Decoder.SAMPLING_RATE
-                    if blank > 0.02:
-                        margin = bytes(2 * int(Decoder.SAMPLE_SIZE *
-                                               (blank - 0.02) *
-                                               Decoder.SAMPLING_RATE))
+                    t = time.time()
+                    if blank > 0.02 or (t - self.unix_timestamp) > 0.5:
+                        margin = b'\0' * int((t - self.unix_timestamp) * Decoder.SAMPLING_RATE * Decoder.CHANNELS)
                         await self.loop.run_in_executor(self.executor, partial(wav.writeframes, margin))
                 wav.writeframes(data)
                 self.last_timestamp = packet.timestamp
+                self.unix_timestamp = time.time()
         except asyncio.CancelledError:
             pass
+        except Exception as e:
+            print(e)
         finally:
             wav.close()
             self.file.seek(0)
@@ -82,7 +112,12 @@ class BufferDecoder:
     def stop(self):
         if self.task is not None:
             self.task.cancel()
-        self.file.seek(0)
 
     def start(self):
         self.task = self.loop.create_task(self.decode_task())
+
+    def clean(self):
+        self.file = BytesIO()
+        self.task = None
+        self.unix_timestamp = None
+        self.last_timestamp = None
