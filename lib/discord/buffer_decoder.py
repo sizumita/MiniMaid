@@ -5,6 +5,7 @@ import wave
 import struct
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+import time
 
 from .opus import Decoder
 
@@ -27,11 +28,14 @@ class RTPPacket(PacketBase):
         self.ext_header = None
         self.csrcs = None
         self.profile = None
-        self.unix_timestamp = None
+        self.real_time = None
 
         self.header = header
         self.decrypted = decrypted
         self.seq, self._timestamp, self.ssrc = struct.unpack_from('>HII', header, 2)
+
+    def set_real_time(self):
+        self.real_time = time.time()
 
     def calc_extention_header_length(self, data: bytes) -> None:
         if not (data[0] == 0xbe and data[1] == 0xde and len(data) > 4):
@@ -106,6 +110,13 @@ class BufferDecoder:
         self.decoder = Decoder()
         self.decoded = asyncio.Event()
         self.queue = PacketQueue()
+        self.ssrc = {}
+
+    def is_speaker(self, ssrc: int):
+        return ssrc in self.ssrc.keys()
+
+    def add_ssrc(self, data: dict) -> None:
+        self.ssrc[data["ssrc"]] = data["user_id"]
 
     async def decode(self):
         file = BytesIO()

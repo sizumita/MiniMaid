@@ -70,7 +70,10 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
                 if 200 <= header[1] <= 204:
                     continue
                 packet = RTPPacket(header, data)
+                if not self.decoder.is_speaker(packet.ssrc):
+                    continue
                 packet.calc_extention_header_length(data)
+                packet.set_real_time()
                 await self.decoder.push(packet)
         except Exception as e:
             print(e)
@@ -94,10 +97,14 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         await super(MiniMaidVoiceWebSocket, self).received_message(msg)
 
         op = msg['op']
+        data = msg.get('d')
 
         if op == 4:
             self.can_record = True
             self.record_task = self.loop.create_task(self.record())
+        elif op == 5:
+            if self.is_recording:
+                self.decoder.add_ssrc(data)
 
     async def close(self, code: int = 1000) -> None:
         if self.record_task is not None:
