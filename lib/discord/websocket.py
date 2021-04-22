@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Optional
 import asyncio
 from aiohttp import ClientWebSocketResponse
 from io import BytesIO
+import sys
 
 from discord.gateway import DiscordVoiceWebSocket
 import nacl.secret
@@ -72,7 +73,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
                 packet.calc_extention_header_length(data)
                 await self.decoder.push(packet)
         except Exception as e:
-            import sys
+            print(e)
             print("error at record")
             print(sys.exc_info())
 

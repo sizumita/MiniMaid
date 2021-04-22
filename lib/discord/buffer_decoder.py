@@ -45,9 +45,9 @@ class RTPPacket(PacketBase):
                 continue
             offset += 1 + (0b1111 & (byte_ >> 4))
 
-        if self.decrypted[offset+1] in [0, 2]:
+        if self.decrypted[offset + 1] in [0, 2]:
             offset += 1
-        self.decrypted = data[offset+1:]
+        self.decrypted = data[offset + 1:]
 
     @property
     def timestamp(self):
@@ -131,12 +131,9 @@ class BufferDecoder:
                 continue
 
             if last_timestamp is not None:
-                elapsed = (packet.timestamp - last_timestamp) / \
-                          Decoder.SAMPLING_RATE
+                elapsed = (packet.timestamp - last_timestamp) / Decoder.SAMPLING_RATE
                 if elapsed > 0.02:
-                    margin = bytes(2 * int(Decoder.SAMPLE_SIZE *
-                                           (elapsed - 0.02) *
-                                           Decoder.SAMPLING_RATE))
+                    margin = bytes(2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.02) * Decoder.SAMPLING_RATE))
                     await self.loop.run_in_executor(self.executor, partial(wav.writeframes, margin))
             data = self.decoder.decode(packet.decrypted)
             wav.writeframes(data)
