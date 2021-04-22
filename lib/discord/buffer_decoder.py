@@ -5,9 +5,8 @@ import wave
 import struct
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
-import time
 
-from discord.opus import Decoder
+from .opus import Decoder
 
 
 class PacketBase:
