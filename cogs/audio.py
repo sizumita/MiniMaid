@@ -284,7 +284,7 @@ class AudioCommandMixin(AudioBase):
     @voice_channel_only()
     @bot_connected_only()
     @user_connected_only()
-    @cooldown(1, 32, BucketType.guild)
+    # @cooldown(1, 32, BucketType.guild)
     async def record_start(self, ctx: Context) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
