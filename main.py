@@ -12,7 +12,8 @@ extensions = [
     "cogs.poll_manager",
     "cogs.tts.tts",
     "cogs.tts.preference",
-    "cogs.audio"
+    "cogs.audio",
+    "cogs.rss"
 ]
 
 for extension in extensions:
