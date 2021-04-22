@@ -6,7 +6,7 @@ from io import BytesIO
 from discord.gateway import DiscordVoiceWebSocket
 import nacl.secret
 
-from lib.discord.opus import BufferDecoder, RTPPacket
+from lib.discord.buffer_decoder import BufferDecoder, RTPPacket
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -58,33 +58,36 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         return header, self.box.decrypt(bytes(encrypted), bytes(nonce))
 
     async def record(self) -> None:
-        state = self._connection
-        while True:
-            recv = await self.loop.sock_recv(state.socket, 2 ** 16)
-            if not self.is_recording:
-                continue
-            decrypt_fn = getattr(self, f'decrypt_{state.mode}')
-            header, data = decrypt_fn(recv)
-            if 200 <= header[1] <= 204:
-                continue
-            packet = RTPPacket(header, data)
-            await self.decoder.push(packet)
+        try:
+            state = self._connection
+            while True:
+                recv = await self.loop.sock_recv(state.socket, 2 ** 16)
+                if not self.is_recording:
+                    continue
+                decrypt_fn = getattr(self, f'decrypt_{state.mode}')
+                header, data = decrypt_fn(recv)
+                if 200 <= header[1] <= 204:
+                    continue
+                packet = RTPPacket(header, data)
+                packet.calc_extention_header_length(data)
+                await self.decoder.push(packet)
+        except Exception as e:
+            import sys
+            print("error at record")
+            print(sys.exc_info())
 
     async def receive_audio_packet(self, bot: 'MiniMaid') -> BytesIO:
         self.decoder.clean()
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
 
         self.is_recording = True
-        self.decoder.start()
         try:
             await bot.wait_for("record_stop", timeout=30)
         except asyncio.TimeoutError:
             pass
         self.is_recording = False
-        self.decoder.stop()
-        await self.decoder.decoded.wait()
 
-        return self.decoder.file
+        return await self.decoder.decode()
 
     async def received_message(self, msg: dict) -> None:
         await super(MiniMaidVoiceWebSocket, self).received_message(msg)
