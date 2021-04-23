@@ -3,11 +3,14 @@ import asyncio
 from aiohttp import ClientWebSocketResponse
 from io import BytesIO
 import sys
+import struct
+import time
 
 from discord.gateway import DiscordVoiceWebSocket
 import nacl.secret
 
 from lib.discord.buffer_decoder import BufferDecoder, RTPPacket
+from lib.discord.ring_buffer import RingBuffer
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -19,8 +22,10 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         self.can_record = False
         self.box: Optional[nacl.secret.SecretBox] = None
         self.decoder = BufferDecoder(self.loop)
+        self.replay_decoder = BufferDecoder(self.loop)
         self.record_task = None
         self.is_recording = False
+        self.ring_buffer = RingBuffer()
 
     def decrypt_xsalsa20_poly1305(self, data: bytes) -> tuple:
         if self.box is None:
@@ -58,12 +63,16 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         nonce[:4] = _nonce
         return header, self.box.decrypt(bytes(encrypted), bytes(nonce))
 
-    async def record(self) -> None:
+    async def receive_audio_packet(self) -> None:
         try:
             state = self._connection
             while True:
                 recv = await self.loop.sock_recv(state.socket, 2 ** 16)
                 if not self.is_recording:
+                    if 200 <= recv[1] < 205:
+                        continue
+                    seq, timestamp, ssrc = struct.unpack_from('>HII', recv, 2)
+                    self.ring_buffer.append(ssrc, dict(time=time.time(), data=recv))
                     continue
                 decrypt_fn = getattr(self, f'decrypt_{state.mode}')
                 header, data = decrypt_fn(recv)
@@ -78,7 +87,27 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             print("error at record")
             print(sys.exc_info())
 
-    async def receive_audio_packet(self, bot: 'MiniMaid') -> BytesIO:
+    async def replay(self) -> BytesIO:
+        self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
+        state = self._connection
+        self.is_recording = True
+        try:
+            items = self.ring_buffer.get_all_items(time.time() - 30)
+            self.replay_decoder.clean()
+
+            for item in items:
+                decrypt_fn = getattr(self, f'decrypt_{state.mode}')
+                header, data = decrypt_fn(item['data'])
+                packet = RTPPacket(header, data)
+                packet.calc_extention_header_length(data)
+                packet.real_time = item['time']
+                await self.replay_decoder.push(packet)
+        finally:
+            self.is_recording = False
+
+        return await self.replay_decoder.decode()
+
+    async def record(self, bot: 'MiniMaid') -> BytesIO:
         self.decoder.clean()
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
 
@@ -87,6 +116,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             await bot.wait_for("record_stop", timeout=30)
         except asyncio.TimeoutError:
             pass
+        self.ring_buffer.clear()
         self.is_recording = False
 
         return await self.decoder.decode()
@@ -99,7 +129,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
 
         if op == 4:
             self.can_record = True
-            self.record_task = self.loop.create_task(self.record())
+            self.record_task = self.loop.create_task(self.receive_audio_packet())
         elif op == 5:
             if self.is_recording:
                 self.decoder.add_ssrc(data)
