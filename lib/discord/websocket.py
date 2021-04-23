@@ -70,8 +70,6 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
                 if 200 <= header[1] <= 204:
                     continue
                 packet = RTPPacket(header, data)
-                if not self.decoder.is_speaker(packet.ssrc):
-                    continue
                 packet.calc_extention_header_length(data)
                 packet.set_real_time()
                 await self.decoder.push(packet)
