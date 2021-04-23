@@ -87,7 +87,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             print("error at record")
             print(sys.exc_info())
 
-    async def replay(self):
+    async def replay(self) -> BytesIO:
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
         state = self._connection
         self.is_recording = True
