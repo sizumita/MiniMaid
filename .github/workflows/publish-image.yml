@@ -24,13 +24,15 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v2
-        with:
-          no-cache: true
-          platforms: linux/amd64,linux/arm64
-          context: .
-          push: true
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.2.0
+      - name: Build and Push
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.2.1 \
+            --no-cache \
+            --output "type=registry" .
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest \
+            --no-cache \
+            --output "type=registry" .
