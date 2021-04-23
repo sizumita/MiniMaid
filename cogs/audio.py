@@ -260,7 +260,7 @@ class AudioCommandMixin(AudioBase):
             await session.commit()
         await ctx.success(f"タグ: {name}の削除に成功しました。")
 
-    @audio.command(name="replay")
+    @audio.command(name="replay", aliases=["clip"])
     @voice_channel_only()
     @bot_connected_only()
     @user_connected_only()
