@@ -134,6 +134,7 @@ class AudioCommandMixin(AudioBase):
                 audio_tag = result.scalars().first()
                 if audio_tag is None:
                     await ctx.error("その名前のタグは存在しませんでした。")
+                    ctx.command.reset_cooldown(ctx)
                     return
             file = TagAttachment(audio_tag)
         else:
@@ -259,6 +260,33 @@ class AudioCommandMixin(AudioBase):
             await session.commit()
         await ctx.success(f"タグ: {name}の削除に成功しました。")
 
+    @audio.command(name="replay")
+    @voice_channel_only()
+    @bot_connected_only()
+    @user_connected_only()
+    @guild_only()
+    @cooldown(1, 35, BucketType.guild)
+    async def replay_audio(self, ctx: Context) -> None:
+        if ctx.guild.id not in self.connecting_guilds:
+            await ctx.error("オーディオプレーヤー側では接続されていません。")
+            ctx.command.reset_cooldown(ctx)
+            return
+        if ctx.guild.id in self.recording_guilds:
+            await ctx.error("すでに録音を開始しています。")
+            return
+        self.recording_guilds.append(ctx.guild.id)
+        try:
+            await ctx.success("30秒前からのクリップを作成します...")
+            file = await ctx.voice_client.replay()
+            timestamp = datetime.utcnow().timestamp()
+            file.seek(0)
+            await ctx.send("作成終了しました。", file=discord.File(file, f"{timestamp}.wav"))
+        except Exception as e:
+            await ctx.error("エラーが発生しました。")
+            raise e
+        finally:
+            self.recording_guilds.remove(ctx.guild.id)
+
     @audio.group(name="record", invoke_without_command=True)
     @guild_only()
     async def voice_recorder(self, ctx: Context) -> None:
@@ -284,7 +312,7 @@ class AudioCommandMixin(AudioBase):
     @voice_channel_only()
     @bot_connected_only()
     @user_connected_only()
-    # @cooldown(1, 32, BucketType.guild)
+    @cooldown(1, 32, BucketType.guild)
     async def record_start(self, ctx: Context) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
@@ -292,6 +320,7 @@ class AudioCommandMixin(AudioBase):
             return
         if ctx.guild.id in self.recording_guilds:
             await ctx.error("すでに録音を開始しています。")
+            ctx.command.reset_cooldown(ctx)
             return
 
         self.recording_guilds.append(ctx.guild.id)
