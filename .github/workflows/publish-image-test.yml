@@ -1,0 +1,23 @@
+name: Build and Publish Docker
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build Test
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --no-cache \
