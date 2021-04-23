@@ -14,4 +14,7 @@ class MiniMaidVoiceClient(VoiceClient):
         return ws
 
     async def record(self) -> BytesIO:
-        return await self.ws.receive_audio_packet(self.client)
+        return await self.ws.record(self.client)
+
+    async def replay(self) -> BytesIO:
+        return await self.ws.replay()
