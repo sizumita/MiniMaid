@@ -107,7 +107,7 @@ def is_loaded():
     """
     global _lib
     return _lib is not None
-import array
+
 
 class Decoder(DiscordDecoder):
     @staticmethod

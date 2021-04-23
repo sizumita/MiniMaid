@@ -4,7 +4,6 @@ from io import BytesIO
 import wave
 import struct
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 import numpy as np
 import time
 from collections import defaultdict
