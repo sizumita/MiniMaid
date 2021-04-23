@@ -28,7 +28,7 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.2.0 \
+            --tag ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.2.1 \
             --no-cache \
             --output "type=registry" .
           docker buildx build \
