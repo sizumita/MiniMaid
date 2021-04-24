@@ -21,6 +21,10 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
+    async def on_ready(self):
+        prefix = environ["PREFIX"]
+        await self.change_presence(activity=discord.Game(name=f"prefix: {prefix}"))
+
     async def on_error(self, event_method: str, *args: Any, **kwargs: Any) -> None:
         _, err, _ = sys.exc_info()
         if isinstance(err, MiniMaidException) and event_method == "on_message":
