@@ -57,7 +57,7 @@ class RTPPacket(PacketBase):
         try:
             if self.decrypted[offset + 1] in [0, 2]:
                 offset += 1
-        except Exception as e:
+        except IndexError:
             self.decrypted = None
             return
         self.decrypted = data[offset + 1:]
