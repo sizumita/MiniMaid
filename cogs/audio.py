@@ -278,6 +278,9 @@ class AudioCommandMixin(AudioBase):
         try:
             await ctx.success("30秒前からのクリップを作成します...")
             file = await ctx.voice_client.replay()
+            if file is None:
+                await ctx.error("エラーが発生しました。もしエラーが再発するようであれば再接続してください。")
+                return
             timestamp = datetime.utcnow().timestamp()
             file.seek(0)
             await ctx.send("作成終了しました。", file=discord.File(file, f"{timestamp}.wav"))
@@ -327,6 +330,9 @@ class AudioCommandMixin(AudioBase):
         try:
             await ctx.success("録音開始します...")
             file = await ctx.voice_client.record()
+            if file is None:
+                await ctx.error("エラーが発生しました。もしエラーが再発するようであれば再接続してください。")
+                return
             await ctx.success("録音終了しました。")
             timestamp = datetime.utcnow().timestamp()
             file.seek(0)
