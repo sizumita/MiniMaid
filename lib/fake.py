@@ -1,3 +1,6 @@
+"""
+テスト用のFakeクラス
+"""
 from typing import Optional, Any
 
 import discord
@@ -7,6 +10,7 @@ from discord.ext import commands
 class FakeEmoji(discord.Emoji):
     def __init__(self, _id: int) -> None:
         self.id = _id
+        discord.Message._state
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, FakeEmoji):

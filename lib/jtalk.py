@@ -114,7 +114,13 @@ class JTalk:
         if self.h is None:
             raise Exception("Internal Error: OpenJTalk pointer is NULL")
 
-    def generate_pcm(self, text: str) -> Optional[list]:
+    def generate_pcm(self, text: str) -> Optional[bytes]:
+        """
+        PCMの合成音声を生成します。
+
+        :param text: 生成するテキスト
+        :return: 生成したPCM
+        """
         data = c_void_p()
         length = c_size_t()
         r = self.jtalk.openjtalk_generatePCM(self.h, text.encode('utf-8'), byref(data), byref(length))
