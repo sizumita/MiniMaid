@@ -25,10 +25,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx builder
-          run: |
-            docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
-            docker buildx create --name multiarch --driver docker-container --use
-            docker buildx inspect --bootstrap
+        run: |
+          docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          docker buildx create --name multiarch --driver docker-container --use
+          docker buildx inspect --bootstrap
 
       - name: Build and push
         uses: docker/build-push-action@v2
