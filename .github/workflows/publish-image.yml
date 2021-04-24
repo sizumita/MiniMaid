@@ -2,8 +2,7 @@ name: Build and Publish Docker
 
 on:
   push:
-    branches:
-      - master
+    tags:
 
 jobs:
   build_and_push:
@@ -38,5 +37,5 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:1.2.3
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:${GITHUB_REF/refs\/tags\//}
 
