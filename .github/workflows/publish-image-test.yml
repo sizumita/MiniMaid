@@ -22,4 +22,5 @@ jobs:
           docker buildx create --name multiarch --driver docker-container --use
           docker buildx inspect --bootstrap
           docker buildx build \
-            --platform linux/amd64 .
+            --platform linux/amd64,linux/arm64 \
+          .
