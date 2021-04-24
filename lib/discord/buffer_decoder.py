@@ -8,8 +8,11 @@ import numpy as np
 import time
 from collections import defaultdict
 from itertools import zip_longest
+import logging
 
-from .opus import Decoder
+from .opus import Decoder, OpusError
+
+logger = logging.getLogger(__name__)
 
 
 class PacketBase:
@@ -51,8 +54,12 @@ class RTPPacket(PacketBase):
                 continue
             offset += 1 + (0b1111 & (byte_ >> 4))
 
-        if self.decrypted[offset + 1] in [0, 2]:
-            offset += 1
+        try:
+            if self.decrypted[offset + 1] in [0, 2]:
+                offset += 1
+        except Exception as e:
+            self.decrypted = None
+            return
         self.decrypted = data[offset + 1:]
 
     @property
@@ -135,11 +142,10 @@ class BufferDecoder:
         return ssrc in self.ssrc.keys()
 
     def add_ssrc(self, data: dict) -> None:
-        if len(self.ssrc) >= 15:
-            return
         self.ssrc[data["ssrc"]] = data["user_id"]
 
     async def decode(self):
+
         file = BytesIO()
         wav = wave.open(file, "wb")
         wav.setnchannels(Decoder.CHANNELS)
@@ -151,7 +157,11 @@ class BufferDecoder:
             if c > 15:
                 break
             queue = PacketQueue(packets)
-            pcm: ResultPCM = await self.decode_one(queue)
+            try:
+                pcm: ResultPCM = await self.decode_one(queue)
+            except OpusError:
+                wav.close()
+                return None
             pcm_list.append(pcm)
             c += 1
         pcm_list.sort(key=lambda x: x.start_time)
@@ -241,6 +251,12 @@ class BufferDecoder:
             else:
                 start_time = min(packet.real_time, start_time)
 
+            if packet.decrypted is None:
+                data = decoder.decode_float(packet.decrypted)
+                pcm += data
+                last_timestamp = packet.timestamp
+                continue
+
             if len(packet.decrypted) < 10:
                 last_timestamp = packet.timestamp
                 continue
@@ -251,7 +267,12 @@ class BufferDecoder:
                     margin = [0] * 2 * int(Decoder.SAMPLE_SIZE * (elapsed - 0.02) * Decoder.SAMPLING_RATE)
                     # await self.loop.run_in_executor(self.executor, partial(pcm.append, margin))
                     pcm += margin
-            data = decoder.decode_float(packet.decrypted)
+            try:
+                data = decoder.decode_float(packet.decrypted)
+            except Exception:
+                logger.error(f"{packet.cc=}")
+                logger.error(f"{packet.extend=}")
+                raise
             pcm += data
             last_timestamp = packet.timestamp
 

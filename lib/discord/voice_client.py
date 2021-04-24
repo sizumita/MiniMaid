@@ -1,4 +1,5 @@
 from io import BytesIO
+from typing import Optional
 
 from discord import VoiceClient
 from lib.discord.websocket import MiniMaidVoiceWebSocket
@@ -13,8 +14,8 @@ class MiniMaidVoiceClient(VoiceClient):
         self._connected.set()
         return ws
 
-    async def record(self) -> BytesIO:
+    async def record(self) -> Optional[BytesIO]:
         return await self.ws.record(self.client)
 
-    async def replay(self) -> BytesIO:
+    async def replay(self) -> Optional[BytesIO]:
         return await self.ws.replay()
