@@ -1,4 +1,4 @@
-FROM python:3.9.4
+FROM ghcr.io/sizumita/pynacl-docker:1.0.0
 #FROM ubuntu:18.04 as builder
 
 WORKDIR /var/speech
