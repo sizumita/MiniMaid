@@ -21,7 +21,7 @@ class MiniMaid(commands.Bot):
         )
         self.db = Database()
 
-    async def on_ready(self):
+    async def on_ready(self) -> None:
         prefix = environ["PREFIX"]
         await self.change_presence(activity=discord.Game(name=f"prefix: {prefix}"))
 
