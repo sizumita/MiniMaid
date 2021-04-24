@@ -1,4 +1,4 @@
-name: Build and Publish Docker
+name: Build Test Docker
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ develop ]
 
 jobs:
-  build_and_push:
+  build_test:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -22,5 +22,4 @@ jobs:
           docker buildx create --name multiarch --driver docker-container --use
           docker buildx inspect --bootstrap
           docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --no-cache .
+            --platform linux/amd64 .
