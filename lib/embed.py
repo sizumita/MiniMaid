@@ -43,6 +43,12 @@ example:
 
 
 def make_poll_help_embed(ctx: Context) -> Embed:
+    """
+    投票機能の説明のEmbedを生成します。
+
+    :param ctx: Context
+    :return: 生成したEmbed
+    """
     embed = Embed(
         title="投票機能の使い方",
         colour=Colour.teal()
@@ -70,6 +76,12 @@ def make_poll_help_embed(ctx: Context) -> Embed:
 
 
 def make_poll_reserve_embed(ctx: Context) -> Embed:
+    """
+    投票の作成中のEmbedを生成します。
+
+    :param ctx: Context
+    :return: 生成したEmbed
+    """
     embed = Embed(
         title="投票を作成中です",
         description="しばらくお待ちください。"
@@ -79,6 +91,13 @@ def make_poll_reserve_embed(ctx: Context) -> Embed:
 
 
 def make_poll_embed(ctx: Context, poll: Poll) -> Embed:
+    """
+    投票のEmbedを作成します。
+
+    :param ctx: Context
+    :param poll: 生成する投票
+    :return: 生成したEmbed
+    """
     description = f"{poll.limit}個まで投票できます。\n\n" if poll.limit is not None else ""
     for choice in poll.choices:
         if choice.emoji == choice.value:
@@ -100,6 +119,15 @@ def make_poll_embed(ctx: Context, poll: Poll) -> Embed:
 
 
 def make_poll_result_embed(bot: 'MiniMaid', ctx: Context, poll: Poll, choices: list) -> Embed:
+    """
+    投票結果のEmbedを生成します。
+
+    :param bot: Botのインスタンス
+    :param ctx: Context
+    :param poll: 生成する投票
+    :param choices: 表示する票数 (選択肢, 個数, パーセント)
+    :return: 生成したEmbed
+    """
     message_url = MESSAGE_URL_BASE.format(poll.guild_id, poll.channel_id, poll.message_id)
     user = bot.get_user(poll.owner_id)
     embed = Embed(
@@ -122,11 +150,25 @@ def make_poll_result_embed(bot: 'MiniMaid', ctx: Context, poll: Poll, choices: l
 
 
 def change_footer(embed: Embed, text: str) -> Embed:
+    """
+    Embedのfooterを変更します。
+
+    :param embed: 変更するEmbed
+    :param text: 変更先の文字
+    :return: 生成したEmbed
+    """
     embed.set_footer(text=text)
     return embed
 
 
 def user_voice_preference_embed(ctx: Context, preference: UserVoicePreference) -> Embed:
+    """
+    音声設定の表示用のEmbedを生成します。
+
+    :param ctx: Context
+    :param preference: 表示する設定
+    :return: 生成したEmbed
+    """
     embed = Embed(
         title=f"{ctx.author}さんのボイス設定",
         colour=Colour.blue()
@@ -156,10 +198,23 @@ def user_voice_preference_embed(ctx: Context, preference: UserVoicePreference) -
 
 
 def yesno(v: bool) -> str:
+    """
+    真偽値をはいかいいえに変換します。
+
+    :param v: 変換する値
+    :return: はい か いいえ
+    """
     return "はい" if v else "いいえ"
 
 
 def guild_voice_preference_embed(ctx: Context, preference: GuildVoicePreference) -> Embed:
+    """
+    ギルドの設定を表示するEmbedを生成します。
+
+    :param ctx: Context
+    :param preference: 表示する設定
+    :return: 生成したEmbed
+    """
     embed = Embed(
         title=f"{ctx.guild.name}のボイス設定",
         colour=Colour.blue()
@@ -199,6 +254,13 @@ def guild_voice_preference_embed(ctx: Context, preference: GuildVoicePreference)
 
 
 def voice_dictionaries_embed(ctx: Context, dictionaries: List[VoiceDictionary]) -> Embed:
+    """
+    読み上げの辞書を表示するEmbedを生成します。
+
+    :param ctx: Context
+    :param dictionaries: 表示する辞書のリスト
+    :return: 生成したEmbed
+    """
     embed = Embed(
         title=f"{ctx.guild.name}の読み上げ用辞書一覧",
         description="\n".join([f"{dic.before} : {dic.after}" for dic in dictionaries])[:2000]
