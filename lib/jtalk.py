@@ -13,7 +13,7 @@ from ctypes import (
     c_short
 )
 import platform
-from typing import Optional
+from typing import Optional, Any
 
 
 class HtsVoiceFilelist(Structure):
@@ -114,7 +114,7 @@ class JTalk:
         if self.h is None:
             raise Exception("Internal Error: OpenJTalk pointer is NULL")
 
-    def generate_pcm(self, text: str) -> Optional[bytes]:
+    def generate_pcm(self, text: str) -> Any:
         """
         PCMの合成音声を生成します。
 
