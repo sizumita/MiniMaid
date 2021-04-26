@@ -21,12 +21,12 @@ jobs:
           docker buildx inspect --bootstrap
 
       - name: Cache Docker layers
-          uses: actions/cache@v2
-          with:
-            path: /tmp/.buildx-cache
-            key: ${{ runner.os }}-buildx-${{ github.sha }}
-            restore-keys: |
-              ${{ runner.os }}-buildx-
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
       - name: Build Test
         uses: docker/build-push-action@v2
