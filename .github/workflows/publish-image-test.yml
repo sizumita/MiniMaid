@@ -1,14 +1,14 @@
 name: Build Test Docker
 
 on:
-  push:
-    branches: [ develop ]
   pull_request:
     branches: [ develop ]
 
 jobs:
   build_test:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: minimaid
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -16,10 +16,32 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Build Test
+      - name: Set up Docker Buildx Builder
         run: |
           docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
           docker buildx create --name multiarch --driver docker-container --use
           docker buildx inspect --bootstrap
-          docker buildx build \
-            --platform linux/amd64 .
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Test
+        uses: docker/build-push-action@v2
+        with:
+          platforms: linux/amd64
+          context: .
+          push: false
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
