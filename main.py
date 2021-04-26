@@ -13,7 +13,8 @@ extensions = [
     "cogs.tts.tts",
     "cogs.tts.preference",
     "cogs.audio",
-    "cogs.rss"
+    "cogs.rss",
+    "cogs.help"
 ]
 
 for extension in extensions:

@@ -40,6 +40,13 @@ example:
     poll limited 2 hidden 緯度が日本より上の国の２つはどれか？ 🇮🇹 イタリア 🇬🇧 イギリス 🇩🇪 ドイツ 🇫🇷 フランス
 ```
 """
+HELP_MESSAGE = """
+[コマンド一覧](https://github.com/sizumita/MiniMaid/blob/master/docs/Commands.md)
+"""
+
+
+def help_embed() -> Embed:
+    return Embed(title="MiniMaid Help", description=HELP_MESSAGE, colour=Colour.blue())
 
 
 def make_poll_help_embed(ctx: Context) -> Embed:
