@@ -7,6 +7,8 @@ on:
 jobs:
   build_test:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: minimaid
     steps:
       - name: checkout
         uses: actions/checkout@v2
@@ -34,5 +36,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           context: .
           push: false
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
