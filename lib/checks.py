@@ -8,6 +8,11 @@ from lib.errors import BotNotConnected, UserNotConnected, NoStageChannel
 
 
 def bot_connected_only() -> Any:
+    """
+    BotがVCに接続しているかのチェック
+
+    :return: check
+    """
     def predicate(ctx: Context) -> bool:
         if ctx.voice_client is None:
             raise BotNotConnected()
@@ -17,6 +22,11 @@ def bot_connected_only() -> Any:
 
 
 def user_connected_only() -> Any:
+    """
+    コマンドを打ったユーザーがVCに接続しているかのチェック
+
+    :return: check
+    """
     def predicate(ctx: Context) -> bool:
         if ctx.author.voice is None or ctx.author.voice.channel is None:
             raise UserNotConnected()
@@ -26,6 +36,11 @@ def user_connected_only() -> Any:
 
 
 def voice_channel_only() -> Any:
+    """
+    ユーザーが接続しているチャンネルがVCであるかのチェック
+
+    :return: check
+    """
     def predicate(ctx: Context) -> bool:
         if isinstance(ctx.author.voice.channel, discord.StageChannel):
             raise NoStageChannel()

@@ -69,14 +69,15 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
             while True:
                 recv = await self.loop.sock_recv(state.socket, 2 ** 16)
                 if not self.is_recording:
-                    if 200 <= recv[1] < 205:
+                    if 200 <= recv[1] <= 204:
                         continue
                     seq, timestamp, ssrc = struct.unpack_from('>HII', recv, 2)
                     self.ring_buffer.append(ssrc, dict(time=time.time(), data=recv))
                     continue
                 decrypt_fn = getattr(self, f'decrypt_{state.mode}')
                 header, data = decrypt_fn(recv)
-                if 200 <= header[1] <= 204:
+                print(len(recv))
+                if 200 <= recv[1] <= 204:
                     continue
                 packet = RTPPacket(header, data)
                 packet.calc_extention_header_length(data)
