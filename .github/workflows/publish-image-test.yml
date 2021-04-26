@@ -31,12 +31,11 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build Test
-        uses: docker/build-push-action@v2
-        with:
-          platforms: linux/amd64
-          context: .
-          push: false
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ env.IMAGE_NAME }}:latest
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+        run: |
+          docker buildx build \
+            --cache-from "type=local,src=/tmp/.buildx-cache" \
+            --cache-to "type=local,dest=/tmp/.buildx-cache" \
+            --platform linux/amd64 \
+            --output "type=image,push=false" \
+            --tag sizumita/minimaid:latest \
+            --file ./Dockerfile ./
