@@ -33,7 +33,7 @@ jobs:
       - name: Build Test
         uses: docker/build-push-action@v2
         with:
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64
           context: .
           push: false
           tags: |
