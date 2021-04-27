@@ -7,6 +7,7 @@ from more_itertools import chunked
 from discord.ext.commands import Cog, group, guild_only
 
 from lib.context import Context
+from lib.errors import UserNotConnected
 
 
 if TYPE_CHECKING:
@@ -29,6 +30,17 @@ async def send_teams(ctx: Context, teams: list) -> discord.Message:
     return await ctx.send(text, allowed_mentions=discord.AllowedMentions.none())
 
 
+def get_members(ctx: Context, _members: str) -> list:
+    if _members == "everyone":
+        return [m for m in ctx.guild.members if not m.bot]
+    elif _members in ["vc", "voice"]:
+        if ctx.author.voice is None or ctx.author.voice.channel is None:
+            raise UserNotConnected()
+        return [m for m in ctx.author.voice.channel.members if not m.bot]
+
+    return list(ctx.message.mentions)
+
+
 class TeamCog(Cog):
     def __init__(self, bot: 'MiniMaid') -> None:
         self.bot = bot
@@ -37,7 +49,7 @@ class TeamCog(Cog):
     @guild_only()
     async def team(self, ctx: Context, num: int, *, _members: str) -> None:
         """チーム分けを行うコマンドです。指定したチーム数にユーザーを分割します。everyoneと入力すると全員をチーム分けします。"""
-        members = list(ctx.guild.members) if _members == "everyone" else list(ctx.message.mentions)
+        members = get_members(ctx, _members)
         if num > len(members):
             await ctx.send("チームの数はメンバーの人数より多くすることはできません。", reference=ctx.message)
             return
@@ -49,7 +61,7 @@ class TeamCog(Cog):
     @team.command(name="chunked")
     async def by_member_count(self, ctx: Context, num: int, *, _members: str) -> None:
         """チームの人数を指定して分割します。everyoneと入力すると全員をチーム分けします。"""
-        members = list(ctx.guild.members) if _members == "everyone" else list(ctx.message.mentions)
+        members = get_members(ctx, _members)
         random.shuffle(members)
         teams = list(chunked(members, num))
         await send_teams(ctx, teams)
