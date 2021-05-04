@@ -1,4 +1,4 @@
-discord.py[voice]==1.7.1
+discord.py[voice]==1.7.2
 sqlalchemy==1.4.12
 asyncpg==0.22.0
 numpy==1.20.2
