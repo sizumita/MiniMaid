@@ -4,6 +4,6 @@ asyncpg==0.22.0
 numpy==1.20.2
 more-itertools==8.7.0
 emoji==1.2.0
-alembic==1.5.8
+alembic==1.6.0
 psycopg2==2.8.6
 feedparser==6.0.2
