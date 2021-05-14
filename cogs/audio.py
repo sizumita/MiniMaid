@@ -5,6 +5,7 @@ import re
 from io import BytesIO
 from uuid import uuid4
 from datetime import datetime
+import os
 
 from discord.ext.commands import (
     Cog,
@@ -12,7 +13,9 @@ from discord.ext.commands import (
     group,
     guild_only,
     cooldown,
-    BucketType
+    BucketType,
+    command,
+    is_owner
 )
 import discord
 import aiohttp
@@ -52,6 +55,31 @@ class AudioBase(Cog):
         self.locks: Dict[int, asyncio.Lock] = defaultdict(asyncio.Lock)
         self.engine = AudioEngine(self.bot.loop)
         self.recording_guilds: List[int] = []
+        self.invent_mode = False if os.environ.get("INVENT", "0") == "0" else True
+
+    @command()
+    @is_owner()
+    async def invent_mode(self, ctx: Context):
+        """invent modeを一時的に変更します。"""
+        self.invent_mode = not self.invent_mode
+        await ctx.success(f"invent modeを{self.invent_mode}に変更しました。")
+
+    @Cog.listener(name="on_voice_state_update")
+    async def check_all_member_left(self,
+                                    member: discord.Member,
+                                    before: discord.VoiceState,
+                                    after: discord.VoiceState) -> None:
+        if member.bot:
+            return
+        if member.guild.id not in self.connecting_guilds:
+            return
+        if before.channel is None:
+            return
+        me: discord.Member = member.guild.me
+        if me.voice is None or me.voice.channel is None:
+            return
+        if not [m for m in me.voice.channel.members if not m.bot]:
+            await me.guild.voice_client.disconnect(force=True)
 
 
 class AudioCommandMixin(AudioBase):
@@ -63,8 +91,10 @@ class AudioCommandMixin(AudioBase):
             await ctx.error("読み上げ機能側で接続されています。", "切断してから再接続してください。")
             return
         if ctx.guild.id in self.connecting_guilds:
-            await ctx.error("すでに接続しています。", "切断してから再接続してください。")
-            return
+            await ctx.send("すでに接続しています。切断してから再接続します...")
+            if ctx.guild.voice_client is not None:
+                await ctx.guild.voice_client.disconnect(force=True)
+                self.connecting_guilds.remove(ctx.guild.id)
 
         await ctx.author.voice.channel.connect(timeout=30.0, cls=MiniMaidVoiceClient)
         self.connecting_guilds.append(ctx.guild.id)
@@ -290,7 +320,7 @@ class AudioCommandMixin(AudioBase):
         finally:
             self.recording_guilds.remove(ctx.guild.id)
 
-    @audio.group(name="record", invoke_without_command=True)
+    @group(name="record", invoke_without_command=True)
     @guild_only()
     async def voice_recorder(self, ctx: Context) -> None:
         embed = discord.Embed(title="オーディオレコーダーの使い方", colour=discord.Colour.gold())
@@ -315,7 +345,7 @@ class AudioCommandMixin(AudioBase):
     @voice_channel_only()
     @bot_connected_only()
     @user_connected_only()
-    @cooldown(1, 32, BucketType.guild)
+    @cooldown(1, 86400, BucketType.guild)
     async def record_start(self, ctx: Context) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
@@ -329,19 +359,21 @@ class AudioCommandMixin(AudioBase):
         self.recording_guilds.append(ctx.guild.id)
         try:
             await ctx.success("録音開始します...")
-            file = await ctx.voice_client.record()
+            file = await ctx.voice_client.record(self.invent_mode)
             if file is None:
                 await ctx.error("エラーが発生しました。もしエラーが再発するようであれば再接続してください。")
                 return
             await ctx.success("録音終了しました。")
             timestamp = datetime.utcnow().timestamp()
             file.seek(0)
-            await ctx.send(file=discord.File(file, f"{timestamp}.wav"))
+            await ctx.send(file=discord.File(file, f"{timestamp}.mp3"))
         except Exception as e:
             await ctx.error("エラーが発生しました。")
             raise e
         finally:
             self.recording_guilds.remove(ctx.guild.id)
+            await asyncio.sleep(10)
+            ctx.command.reset_cooldown(ctx)
 
     @voice_recorder.command(name="stop", aliases=["end"])
     @voice_channel_only()

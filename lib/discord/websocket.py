@@ -76,7 +76,6 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
                     continue
                 decrypt_fn = getattr(self, f'decrypt_{state.mode}')
                 header, data = decrypt_fn(recv)
-                print(len(recv))
                 if 200 <= recv[1] <= 204:
                     continue
                 packet = RTPPacket(header, data)
@@ -108,19 +107,19 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
 
         return await self.replay_decoder.decode()
 
-    async def record(self, bot: 'MiniMaid') -> BytesIO:
+    async def record(self, bot: 'MiniMaid', is_invent=False) -> BytesIO:
         self.decoder.clean()
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
 
         self.is_recording = True
         try:
-            await bot.wait_for("record_stop", timeout=30)
+            await bot.wait_for("record_stop", timeout=None if is_invent else 30)
         except asyncio.TimeoutError:
             pass
         self.ring_buffer.clear()
         self.is_recording = False
 
-        return await self.decoder.decode()
+        return await self.decoder.decode_to_mp3()
 
     async def received_message(self, msg: dict) -> None:
         await super(MiniMaidVoiceWebSocket, self).received_message(msg)

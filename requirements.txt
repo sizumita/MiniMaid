@@ -7,3 +7,4 @@ emoji==1.2.0
 alembic==1.5.8
 psycopg2==2.8.6
 feedparser==6.0.2
+lameenc==1.3.1
