@@ -107,7 +107,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
 
         return await self.replay_decoder.decode()
 
-    async def record(self, bot: 'MiniMaid', is_invent=False) -> BytesIO:
+    async def record(self, bot: 'MiniMaid', is_invent: bool = False) -> BytesIO:
         self.decoder.clean()
         self.box = nacl.secret.SecretBox(bytes(self._connection.secret_key))
 

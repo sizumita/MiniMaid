@@ -59,7 +59,7 @@ class AudioBase(Cog):
 
     @command()
     @is_owner()
-    async def invent_mode(self, ctx: Context):
+    async def invent_mode(self, ctx: Context) -> None:
         """invent modeを一時的に変更します。"""
         self.invent_mode = not self.invent_mode
         await ctx.success(f"invent modeを{self.invent_mode}に変更しました。")
