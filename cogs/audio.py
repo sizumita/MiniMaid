@@ -326,12 +326,12 @@ class AudioCommandMixin(AudioBase):
         embed = discord.Embed(title="オーディオレコーダーの使い方", colour=discord.Colour.gold())
         embed.add_field(
             name="録音の仕方",
-            value=f"**{ctx.prefix}audio record start**で録音を開始します。最大30秒まで録音できます。",
+            value=f"**{ctx.prefix}record start**で録音を開始します。最大30秒まで録音できます。",
             inline=False
         )
         embed.add_field(
             name="録音の終了の仕方",
-            value=f"録音を途中でやめたい場合は、**{ctx.prefix}audio record stop**でやめることができます。",
+            value=f"録音を途中でやめたい場合は、**{ctx.prefix}record stop**でやめることができます。",
             inline=False
         )
         embed.add_field(
