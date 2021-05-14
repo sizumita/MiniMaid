@@ -14,8 +14,8 @@ class MiniMaidVoiceClient(VoiceClient):
         self._connected.set()
         return ws
 
-    async def record(self) -> Optional[BytesIO]:
-        return await self.ws.record(self.client)
+    async def record(self, is_invent: bool = False) -> Optional[BytesIO]:
+        return await self.ws.record(self.client, is_invent)
 
     async def replay(self) -> Optional[BytesIO]:
         return await self.ws.replay()

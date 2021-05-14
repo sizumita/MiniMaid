@@ -1,5 +1,6 @@
 # type: ignore
 import asyncio
+from functools import partial
 from io import BytesIO
 import wave
 import struct
@@ -9,6 +10,7 @@ import time
 from collections import defaultdict
 from itertools import zip_longest
 import logging
+import lameenc
 
 from .opus import Decoder, OpusError
 
@@ -144,13 +146,7 @@ class BufferDecoder:
     def add_ssrc(self, data: dict) -> None:
         self.ssrc[data["ssrc"]] = data["user_id"]
 
-    async def decode(self):
-
-        file = BytesIO()
-        wav = wave.open(file, "wb")
-        wav.setnchannels(Decoder.CHANNELS)
-        wav.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
-        wav.setframerate(Decoder.SAMPLING_RATE)
+    async def decode_to_pcm(self):
         pcm_list = []
         c = 0
         for ssrc, packets in self.queue.get().items():
@@ -160,18 +156,15 @@ class BufferDecoder:
             try:
                 pcm: ResultPCM = await self.decode_one(queue)
             except OpusError:
-                wav.close()
                 return None
             pcm_list.append(pcm)
             c += 1
         pcm_list.sort(key=lambda x: x.start_time)
         if not pcm_list:
-            wav.close()
-            file.seek(0)
-            return file
+            return None
         first_time = pcm_list[0].start_time
         for pcm in pcm_list:
-            pcm.add_margin(pcm.start_time - first_time)
+            await self.loop.run_in_executor(self.executor, partial(pcm.add_margin, pcm.start_time - first_time))
 
         right_channel = []
         left_channel = []
@@ -223,8 +216,35 @@ class BufferDecoder:
 
         # Convert to (little-endian) 16 bit integers.
         audio = (audio * (2 ** 15 - 1)).astype(np.int16)
+        return audio.tobytes()
 
-        wav.writeframes(audio.tobytes())
+    async def decode_to_mp3(self):
+        encoder = lameenc.Encoder()
+        encoder.set_bit_rate(128)
+        encoder.set_quality(2)
+        encoder.set_channels(2)
+        encoder.set_in_sample_rate(48000)
+        audio = await self.decode_to_pcm()
+        if audio is None:
+            return None
+        mp3 = encoder.encode(audio)
+        mp3 += encoder.flush()
+        file = BytesIO(mp3)
+        return file
+
+    async def decode(self):
+
+        file = BytesIO()
+        wav = wave.open(file, "wb")
+        wav.setnchannels(Decoder.CHANNELS)
+        wav.setsampwidth(Decoder.SAMPLE_SIZE // Decoder.CHANNELS)
+        wav.setframerate(Decoder.SAMPLING_RATE)
+
+        audio = await self.decode_to_pcm()
+        if audio is None:
+            return None
+
+        wav.writeframes(audio)
         wav.close()
         file.seek(0)
 
@@ -252,7 +272,7 @@ class BufferDecoder:
                 start_time = min(packet.real_time, start_time)
 
             if packet.decrypted is None:
-                data = decoder.decode_float(packet.decrypted)
+                data = await self.loop.run_in_executor(self.executor, partial(decoder.decode_float, packet.decrypted))
                 pcm += data
                 last_timestamp = packet.timestamp
                 continue
@@ -268,7 +288,7 @@ class BufferDecoder:
                     # await self.loop.run_in_executor(self.executor, partial(pcm.append, margin))
                     pcm += margin
             try:
-                data = decoder.decode_float(packet.decrypted)
+                data = await self.loop.run_in_executor(self.executor, partial(decoder.decode_float, packet.decrypted))
             except Exception:
                 logger.error(f"{packet.cc=}")
                 logger.error(f"{packet.extend=}")
