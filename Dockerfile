@@ -33,6 +33,10 @@ COPY requirements.txt /bot
 
 RUN pip install -r requirements.txt
 
+COPY lameenc.sh /bot
+
+RUN bash lameenc.sh
+
 COPY bot.py /bot
 COPY main.py /bot
 COPY cogs /bot/cogs
