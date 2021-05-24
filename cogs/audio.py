@@ -127,20 +127,18 @@ class AudioCommandMixin(AudioBase):
                               tag: Optional[str]) -> None:
         if ctx.guild.id not in self.connecting_guilds:
             await ctx.error("オーディオプレーヤー側では接続されていません。")
-            ctx.command.reset_cooldown(ctx)
-            return
+            return ctx.command.reset_cooldown(ctx)
 
         if ctx.message.attachments:
             attachment = ctx.message.attachments[0]
             if attachment.filename.endswith((".mp3", ".wav")):
                 if attachment.size > FILESIZE_LIMIT:
                     await ctx.error("ファイルサイズがデカすぎます。25MB以内にしてください。")
-                    return
+                    return ctx.command.reset_cooldown(ctx)
                 file = attachment
             else:
                 await ctx.error("ファイルの拡張子はmp3かwavにしてください。")
-                ctx.command.reset_cooldown(ctx)
-                return
+                return ctx.command.reset_cooldown(ctx)
         elif message is not None:
             msg: discord.Message = message
             if msg.attachments:
@@ -148,34 +146,30 @@ class AudioCommandMixin(AudioBase):
                 if attachment.filename.endswith((".mp3", ".wav")):
                     if attachment.size > FILESIZE_LIMIT:
                         await ctx.error("ファイルサイズがデカすぎます。25MB以内にしてください。")
-                        return
+                        return ctx.command.reset_cooldown(ctx)
                     file = attachment
                 else:
                     await ctx.error("ファイルの拡張子はmp3かwavにしてください。")
-                    ctx.command.reset_cooldown(ctx)
-                    return
+                    return ctx.command.reset_cooldown(ctx)
             else:
                 await ctx.error("このメッセージにはファイルがついていません。")
-                ctx.command.reset_cooldown(ctx)
-                return
+                return ctx.command.reset_cooldown(ctx)
         elif tag is not None:
             async with self.bot.db.Session() as session:
                 result = await session.execute(select_audio_tag(ctx.guild.id, tag))
                 audio_tag = result.scalars().first()
                 if audio_tag is None:
                     await ctx.error("その名前のタグは存在しませんでした。")
-                    ctx.command.reset_cooldown(ctx)
-                    return
+                    return ctx.command.reset_cooldown(ctx)
             file = TagAttachment(audio_tag)
         else:
             await ctx.error("ファイルを一緒に送信するかファイルがついているメッセージを引数に入れてください。")
-            ctx.command.reset_cooldown(ctx)
-            return
+            return ctx.command.reset_cooldown(ctx)
 
         source = await self.engine.create_source(file)
         async with self.locks[ctx.guild.id]:
             if ctx.guild.voice_client is None:
-                return
+                return ctx.command.reset_cooldown(ctx)
 
             def check(ctx2: Context) -> bool:
                 return ctx2.channel.id == ctx.channel.id
