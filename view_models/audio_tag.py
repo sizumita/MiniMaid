@@ -20,6 +20,8 @@ class AudioTagViewModel(ObservedObject):
         self.ctx = ctx
         self.is_playing = Published(False)
         self.page = Published(0)
+        self.is_closed = Published(False)
+
         self.file = None
         self.tags = tags
         self.bot = bot
@@ -40,14 +42,15 @@ class AudioTagViewModel(ObservedObject):
         self.bot.dispatch("skip", self.ctx)
 
     async def play(self, interaction: discord.Interaction, index: int):
+        if self.ctx.guild.voice_client is None:
+            self.is_closed = True
+            return
+
         tag = self.get_tags()[index]
         file = TagAttachment(tag)
         source = await self.cog.engine.create_source(file)
 
         async with self.cog.locks[self.ctx.guild.id]:
-            if self.ctx.guild.voice_client is None:
-                return
-
             def check(ctx2: Context) -> bool:
                 return ctx2.channel.id == self.ctx.channel.id
 

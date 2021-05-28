@@ -45,7 +45,7 @@ class AudioTagView(View):
         for i, e in enumerate(EMOJIS):
             buttons.append(
                 Button("再生").emoji(e)
-                .disabled(self.viewModel.is_playing or i >= m)
+                .disabled(self.viewModel.is_playing or i >= m or self.viewModel.is_closed)
                 .style(discord.ButtonStyle.success)
                 .on_click(self.play_callback(i))
             )

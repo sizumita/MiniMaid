@@ -179,7 +179,7 @@ class AudioCommandMixin(AudioBase):
             await asyncio.sleep(5)
             ctx.command.reset_cooldown(ctx)
 
-    @audio.group(name="tag", invoke_without_command=True)
+    @audio.group(name="tag", invoke_without_command=True, aliases=["tags"])
     @guild_only()
     async def voice_tag(self, ctx: Context) -> None:
         async with self.bot.db.SerializedSession() as session:
