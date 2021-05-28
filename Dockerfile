@@ -31,7 +31,7 @@ WORKDIR /bot
 
 COPY requirements.txt /bot
 
-RUN pip install -r requirements.txt
+RUN pip install -U -r requirements.txt
 
 COPY lameenc.sh /bot
 
@@ -41,6 +41,8 @@ COPY bot.py /bot
 COPY main.py /bot
 COPY cogs /bot/cogs
 COPY lib /bot/lib
+COPY views /bot/views
+COPY view_models /bot/view_models
 COPY dic.json /bot
 COPY alembic.ini /bot
 COPY alembic /bot/alembic

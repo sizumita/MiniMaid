@@ -1,4 +1,5 @@
-discord.py[voice]==1.7.2
+git+git://github.com/Rapptz/discord.py.git#egg=discord.py[voice]
+discord.py[voice]
 sqlalchemy==1.4.12
 asyncpg==0.22.0
 numpy==1.20.2
@@ -8,3 +9,5 @@ alembic==1.6.4
 psycopg2==2.8.6
 feedparser==6.0.2
 wheel==0.36.2
+git+git://github.com/sizumita/discord-ext-ui.git#egg=discord-ext-ui
+

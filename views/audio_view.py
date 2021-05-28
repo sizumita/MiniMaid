@@ -1,0 +1,34 @@
+from typing import TYPE_CHECKING
+
+import discord
+from discord.ext.ui import View, Component, Button
+
+from lib.context import Context
+from view_models.audio_view_model import AudioViewModel
+
+if TYPE_CHECKING:
+    from cogs.audio import AudioBase
+
+
+class AudioView(View):
+    def __init__(self, cog: 'AudioBase', ctx: Context) -> None:
+        super(AudioView, self).__init__()
+        self.viewModel = AudioViewModel(cog, ctx)
+
+    async def body(self):
+        if self.viewModel.disconnected:
+            return Component(
+                "切断しました。",
+                buttons=[]
+            )
+        return Component(
+            embed=discord.Embed(
+                title="操作",
+                description=f"音声タグ一覧と再生は`{self.viewModel.get_prefix()}audio tag`コマンドを実行してください。"
+            ),
+            buttons=[
+                Button("切断")
+                .style(discord.ButtonStyle.danger)
+                .on_click(self.viewModel.disconnect)
+            ]
+        )

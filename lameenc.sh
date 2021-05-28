@@ -13,6 +13,6 @@ if [[ $Unamem =~ .*(Arm|arm|arch).* ]]; then
   cd /tmp
   rm -rf lameenc
 else
-  python -m pip install lameenc
+  python -m pip install lameenc --force-reinstall
 fi
 cd $Basedir

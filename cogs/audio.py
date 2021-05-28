@@ -27,25 +27,15 @@ from lib.audio import AudioEngine
 from lib.database.models import AudioTag
 from lib.database.query import select_audio_tag, select_audio_tags
 from lib.discord.voice_client import MiniMaidVoiceClient
+from lib.tag_attachment import TagAttachment
+from views.audio_view import AudioView
+from views.audio_tag import AudioTagView
 
 if TYPE_CHECKING:
     from bot import MiniMaid
 
 url_compiled = re.compile(r"^https?://[\w!?/+\-_~=;.,*&@#$%()'\[\]]+$")
 FILESIZE_LIMIT = 25 * 10 ** 6
-
-
-class TagAttachment:
-    def __init__(self, audio_tag: AudioTag):
-        self.tag = audio_tag
-        self.filetype = audio_tag.audio_url.split(".")[-1]
-        self.filename = f"{self.tag.name}.{self.filetype}"
-        self.url = self.tag.audio_url
-
-    async def read(self) -> bytes:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(self.tag.audio_url) as response:
-                return await response.read()
 
 
 class AudioBase(Cog):
@@ -98,7 +88,7 @@ class AudioCommandMixin(AudioBase):
 
         await ctx.author.voice.channel.connect(timeout=30.0, cls=MiniMaidVoiceClient)
         self.connecting_guilds.append(ctx.guild.id)
-        await ctx.success("接続しました。")
+        await AudioView(self, ctx).start(self.bot, ctx.channel)
 
     @audio.command(aliases=["dc", "leave"])
     @voice_channel_only()
@@ -170,6 +160,9 @@ class AudioCommandMixin(AudioBase):
         async with self.locks[ctx.guild.id]:
             if ctx.guild.voice_client is None:
                 return ctx.command.reset_cooldown(ctx)
+            if ctx.guild.voice_client.is_playing():
+                await ctx.send("他の機能が再生をすでに開始しています。")
+                return ctx.command.reset_cooldown(ctx)
 
             def check(ctx2: Context) -> bool:
                 return ctx2.channel.id == ctx.channel.id
@@ -195,8 +188,7 @@ class AudioCommandMixin(AudioBase):
         if not tags:
             await ctx.error("タグは一つも作成されていません。")
             return
-        embed = discord.Embed(title="タグ一覧", description="\n".join([tag.name for tag in tags]))
-        await ctx.embed(embed)
+        await AudioTagView(self, ctx, tags).start(self.bot, ctx.channel)
 
     @voice_tag.command(name="add")
     @cooldown(10, 60.0, BucketType.guild)
@@ -360,7 +352,7 @@ class AudioCommandMixin(AudioBase):
             await ctx.success("録音終了しました。")
             timestamp = datetime.utcnow().timestamp()
             file.seek(0)
-            await ctx.send(file=discord.File(file, f"{timestamp}.mp3"))
+            await ctx.send(file=discord.File(file, f"{timestamp}.wav"))
         except Exception as e:
             await ctx.error("エラーが発生しました。")
             raise e

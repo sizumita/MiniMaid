@@ -17,8 +17,8 @@ if TYPE_CHECKING:
 
 
 class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
-    def __init__(self, websocket: ClientWebSocketResponse, loop: asyncio.AbstractEventLoop) -> None:
-        super().__init__(websocket, loop)
+    def __init__(self, websocket: ClientWebSocketResponse, loop: asyncio.AbstractEventLoop, hook=None) -> None:
+        super().__init__(websocket, loop, hook=hook)
         self.can_record = False
         self.box: Optional[nacl.secret.SecretBox] = None
         self.decoder = BufferDecoder(self.loop)
@@ -119,7 +119,7 @@ class MiniMaidVoiceWebSocket(DiscordVoiceWebSocket):
         self.ring_buffer.clear()
         self.is_recording = False
 
-        return await self.decoder.decode_to_mp3()
+        return await self.decoder.decode_to_pcm()
 
     async def received_message(self, msg: dict) -> None:
         await super(MiniMaidVoiceWebSocket, self).received_message(msg)

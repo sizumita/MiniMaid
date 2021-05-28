@@ -10,7 +10,6 @@ import time
 from collections import defaultdict
 from itertools import zip_longest
 import logging
-import lameenc
 
 from .opus import Decoder, OpusError
 
@@ -217,20 +216,6 @@ class BufferDecoder:
         # Convert to (little-endian) 16 bit integers.
         audio = (audio * (2 ** 15 - 1)).astype(np.int16)
         return audio.tobytes()
-
-    async def decode_to_mp3(self):
-        encoder = lameenc.Encoder()
-        encoder.set_bit_rate(128)
-        encoder.set_quality(2)
-        encoder.set_channels(2)
-        encoder.set_in_sample_rate(48000)
-        audio = await self.decode_to_pcm()
-        if audio is None:
-            return None
-        mp3 = encoder.encode(audio)
-        mp3 += encoder.flush()
-        file = BytesIO(mp3)
-        return file
 
     async def decode(self):
 
