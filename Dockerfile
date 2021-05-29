@@ -30,12 +30,8 @@ RUN apt-get update && \
 WORKDIR /bot
 
 COPY requirements.txt /bot
-
+RUN echo 2
 RUN pip install -U -r requirements.txt
-
-COPY lameenc.sh /bot
-
-RUN bash lameenc.sh
 
 COPY bot.py /bot
 COPY main.py /bot

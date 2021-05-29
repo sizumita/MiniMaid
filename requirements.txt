@@ -10,4 +10,3 @@ psycopg2==2.8.6
 feedparser==6.0.2
 wheel==0.36.2
 git+git://github.com/sizumita/discord-ext-ui.git#egg=discord-ext-ui
-
