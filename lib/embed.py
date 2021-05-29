@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, List
 
+import discord
 from discord import Embed, Colour
 
 from lib.context import Context
@@ -93,7 +94,7 @@ def make_poll_reserve_embed(ctx: Context) -> Embed:
         title="投票を作成中です",
         description="しばらくお待ちください。"
     )
-    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url_as(format="png", size=128))
+    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.replace(128, "png"))
     return embed
 
 
@@ -118,7 +119,7 @@ def make_poll_embed(ctx: Context, poll: Poll) -> Embed:
         description=description,
         colour=Colour.blue()
     )
-    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar_url_as(format="png", size=128))
+    embed.set_author(name=str(ctx.author), icon_url=ctx.author.avatar.replace(128, "png"))
     embed.set_footer(
         text="リアクションで投票できます。" + ("匿名投票のため、投票後はリアクションが削除されます。" if poll.hidden else "")
     )
@@ -142,7 +143,7 @@ def make_poll_result_embed(bot: 'MiniMaid', ctx: Context, poll: Poll, choices: l
         colour=Colour.dark_orange()
     )
     embed.set_author(name=(str(user) if user is not None else str(poll.owner_id)),
-                     icon_url=(user.avatar_url_as(format="png", size=128) if user is not None else None))
+                     icon_url=(user.avatar.replace(128, "png") if user is not None else None))
     embed.set_footer(text=f"{ctx.prefix}poll end {poll.id} で投票を終了できます。")
 
     for choice, count, percent in choices:
