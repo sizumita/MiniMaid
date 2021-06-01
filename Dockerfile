@@ -39,6 +39,7 @@ COPY cogs /bot/cogs
 COPY lib /bot/lib
 COPY views /bot/views
 COPY view_models /bot/view_models
+COPY models /bot/models
 COPY dic.json /bot
 COPY alembic.ini /bot
 COPY alembic /bot/alembic

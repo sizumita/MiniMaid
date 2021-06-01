@@ -6,6 +6,7 @@ from io import BytesIO
 from uuid import uuid4
 from datetime import datetime
 import os
+import traceback
 
 from discord.ext.commands import (
     Cog,
@@ -30,6 +31,7 @@ from lib.discord.voice_client import MiniMaidVoiceClient
 from lib.tag_attachment import TagAttachment
 from views.audio_view import AudioView
 from views.audio_tag import AudioTagView
+from views.recorder import RecorderView
 
 if TYPE_CHECKING:
     from bot import MiniMaid
@@ -88,7 +90,7 @@ class AudioCommandMixin(AudioBase):
 
         await ctx.author.voice.channel.connect(timeout=30.0, cls=MiniMaidVoiceClient)
         self.connecting_guilds.append(ctx.guild.id)
-        await AudioView(self, ctx).start(self.bot, ctx.channel)
+        await AudioView(self.bot, self, ctx).start(ctx.channel)
 
     @audio.command(aliases=["dc", "leave"])
     @voice_channel_only()
@@ -188,7 +190,7 @@ class AudioCommandMixin(AudioBase):
         if not tags:
             await ctx.error("タグは一つも作成されていません。")
             return
-        await AudioTagView(self, ctx, tags).start(self.bot, ctx.channel)
+        await AudioTagView(self.bot, self, ctx, tags).start(ctx.channel)
 
     @voice_tag.command(name="add")
     @cooldown(10, 60.0, BucketType.guild)
@@ -333,33 +335,9 @@ class AudioCommandMixin(AudioBase):
     @user_connected_only()
     @cooldown(1, 86400, BucketType.guild)
     async def record_start(self, ctx: Context) -> None:
-        if ctx.guild.id not in self.connecting_guilds:
-            await ctx.error("オーディオプレーヤー側では接続されていません。")
-            ctx.command.reset_cooldown(ctx)
-            return
-        if ctx.guild.id in self.recording_guilds:
-            await ctx.error("すでに録音を開始しています。")
-            ctx.command.reset_cooldown(ctx)
-            return
-
-        self.recording_guilds.append(ctx.guild.id)
-        try:
-            await ctx.success("録音開始します...")
-            file = await ctx.voice_client.record(self.invent_mode)
-            if file is None:
-                await ctx.error("エラーが発生しました。もしエラーが再発するようであれば再接続してください。")
-                return
-            await ctx.success("録音終了しました。")
-            timestamp = datetime.utcnow().timestamp()
-            file.seek(0)
-            await ctx.send(file=discord.File(file, f"{timestamp}.wav"))
-        except Exception as e:
-            await ctx.error("エラーが発生しました。")
-            raise e
-        finally:
-            self.recording_guilds.remove(ctx.guild.id)
-            await asyncio.sleep(10)
-            ctx.command.reset_cooldown(ctx)
+        await RecorderView(self.bot, ctx).start(ctx)
+        await asyncio.sleep(10)
+        ctx.command.reset_cooldown(ctx)
 
     @voice_recorder.command(name="stop", aliases=["end"])
     @voice_channel_only()

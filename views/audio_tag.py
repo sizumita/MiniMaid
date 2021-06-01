@@ -8,6 +8,7 @@ from view_models.audio_tag import AudioTagViewModel
 
 if TYPE_CHECKING:
     from cogs.audio import AudioBase
+    from bot import MiniMaid
 
 EMOJIS = [
     "\U0001f1e6",
@@ -34,13 +35,12 @@ EMOJIS = [
 
 
 class AudioTagView(View):
-    def __init__(self, cog: 'AudioBase', ctx: Context, tags: list) -> None:
-        super(AudioTagView, self).__init__()
-        self.viewModel = AudioTagViewModel(self.bot, cog, ctx, tags)
+    def __init__(self, bot: 'MiniMaid', cog: 'AudioBase', ctx: Context, tags: list) -> None:
+        super(AudioTagView, self).__init__(bot)
+        self.viewModel = AudioTagViewModel(bot, cog, ctx, tags)
 
-    async def start(self, bot, channel):
-        self.viewModel.bot = bot
-        await super(AudioTagView, self).start(bot, channel)
+    async def start(self, channel):
+        await super(AudioTagView, self).start(channel)
 
     def make_embed(self):
         embed = discord.Embed(title="タグ一覧", colour=discord.Colour.blurple())

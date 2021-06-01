@@ -8,11 +8,12 @@ from view_models.audio_view_model import AudioViewModel
 
 if TYPE_CHECKING:
     from cogs.audio import AudioBase
+    from bot import MiniMaid
 
 
 class AudioView(View):
-    def __init__(self, cog: 'AudioBase', ctx: Context) -> None:
-        super(AudioView, self).__init__()
+    def __init__(self, bot: 'MiniMaid', cog: 'AudioBase', ctx: Context) -> None:
+        super(AudioView, self).__init__(bot)
         self.viewModel = AudioViewModel(cog, ctx)
 
     async def body(self):
