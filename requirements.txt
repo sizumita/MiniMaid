@@ -8,3 +8,4 @@ alembic==1.6.5
 psycopg2==2.8.6
 feedparser==6.0.2
 wheel==0.36.2
+types-emoji==1.2.2
