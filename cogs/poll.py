@@ -8,7 +8,7 @@ from discord.ext.commands import (
     group,
     guild_only
 )
-from emoji import UNICODE_EMOJI
+from emoji import UNICODE_EMOJI  # type: ignore
 
 from lib.database.query import create_poll, get_poll_by_id
 from lib.embed import (
